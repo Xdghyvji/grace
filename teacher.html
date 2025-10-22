@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Grace Academy - Teacher Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar { transition: transform 0.3s ease-in-out; }
+        .sidebar.hidden-mobile { transform: translateX(-100%); }
+        @media (min-width: 1024px) { .sidebar.hidden-mobile { transform: translateX(0); } }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+        .loader { border: 8px solid #f3f3f3; border-top: 8px solid #8B5CF6; border-radius: 50%; width: 60px; height: 60px; animation: spin 2s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .active-link { background-color: #5B21B6; color: white; }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800 bg-gray-50 flex min-h-screen">
+
+    <div id="loading-overlay">
+        <div class="loader"></div>
+        <p id="loading-text" class="mt-4 text-lg text-gray-700">Loading Teacher Portal...</p>
+    </div>
+
+    <aside id="sidebar" class="sidebar bg-gradient-to-br from-purple-700 to-purple-900 text-white w-64 p-6 space-y-6 flex flex-col hidden-mobile fixed inset-y-0 left-0 lg:relative lg:translate-x-0 z-40 shadow-lg"></aside>
+
+    <div class="flex-1 flex flex-col">
+        <header class="bg-white shadow-md p-4 flex justify-between items-center lg:hidden sticky top-0 z-30">
+            <button id="sidebar-toggle" class="text-purple-700 focus:outline-none">
+                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            <h1 class="text-2xl font-bold text-purple-900">Teacher Panel</h1>
+            <div class="flex items-center space-x-3">
+                <span class="font-medium text-gray-700 hidden sm:block" id="topbar-teacher-name"></span>
+                <img id="topbar-teacher-img" src="https://placehold.co/40x40/800080/FFFFFF?text=T" alt="Teacher Profile" class="h-10 w-10 rounded-full border-2 border-purple-500">
+            </div>
+        </header>
+
+        <main class="flex-1 p-6 lg:p-10 bg-gray-50"></main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, addDoc, query, orderBy, serverTimestamp, where, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA65vwfeuvsxnVSmlTof1_khaPmNtiMMv0",
+            authDomain: "non-ruled.firebaseapp.com",
+            projectId: "non-ruled",
+            storageBucket: "non-ruled.firebasestorage.app",
+            messagingSenderId: "981177762303",
+            appId: "1:981177762303:web:7db5c95c3b264444e267ca",
+            measurementId: "G-E3TY5JLVT5"
+        };
+
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let teacherDataCache = null;
+        let assignedStudentsCache = [];
+        let assignmentsCache = [];
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user && !user.isAnonymous) {
+                const userDocRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userDocRef);
+
+                if (userDoc.exists() && userDoc.data().role === 'teacher') {
+                    const teacherProfileRef = doc(db, "teachers", user.uid);
+                    onSnapshot(teacherProfileRef, (teacherProfileSnap) => {
+                         if (teacherProfileSnap.exists()) {
+                            teacherDataCache = { id: user.uid, ...teacherProfileSnap.data() };
+                            if (!document.getElementById('sidebar').innerHTML.trim()) {
+                                populateUI();
+                            }
+                            initializeTeacherData(teacherDataCache);
+                            if(loadingOverlay.style.display !== 'none') loadingOverlay.style.display = 'none';
+                        } else {
+                            loadingText.innerHTML = '<p class="text-red-500">Error: Teacher profile not found.</p>';
+                        }
+                    });
+                } else {
+                    loadingText.textContent = 'Access Denied. Redirecting...';
+                    window.location.href = 'login.html';
+                }
+            } else {
+                loadingText.textContent = 'Please log in. Redirecting...';
+                window.location.href = 'login.html';
+            }
+        });
+
+        function populateUI() {
+            document.getElementById('sidebar').innerHTML = `
+                <div class="flex items-center space-x-3 border-b border-purple-600 pb-4"><img src="https://placehold.co/50x50/FFFFFF/8B5CF6?text=GA" alt="Academy Logo" class="h-12 w-auto"><span class="text-2xl font-bold tracking-tight">Teacher Panel</span></div>
+                <nav class="flex-1 space-y-2">
+                    <a href="#dashboard" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-purple-600 transition duration-200"><i class="fas fa-tachometer-alt w-6"></i><span>Dashboard</span></a>
+                    <a href="#my-students" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-purple-600 transition duration-200"><i class="fas fa-users w-6"></i><span>My Students</span></a>
+                    <a href="#manage-results" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-purple-600 transition duration-200"><i class="fas fa-poll w-6"></i><span>Manage Results</span></a>
+                    <a href="#assignments" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-purple-600 transition duration-200"><i class="fas fa-tasks w-6"></i><span>Assignments</span></a>
+                    <a href="#announcements" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-purple-600 transition duration-200"><i class="fas fa-bullhorn w-6"></i><span>Announcements</span></a>
+                </nav>
+                <div class="border-t border-purple-600 pt-4"><a href="index.html" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-purple-600 transition duration-200"><i class="fas fa-home w-6"></i><span>Back to Home</span></a><button id="logout-button" class="w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-lg bg-red-600 hover:bg-red-700 transition duration-200 mt-2"><i class="fas fa-sign-out-alt w-6"></i><span>Logout</span></button></div>`;
+            
+            document.querySelector('main').innerHTML = `<section id="dashboard" class="hidden"></section><section id="my-students" class="hidden"></section><section id="manage-results" class="hidden"></section><section id="assignments" class="hidden"></section><section id="announcements" class="hidden"></section>`;
+            
+            document.querySelectorAll('.sidebar nav a').forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); showSection(link.getAttribute('href').substring(1)); }); });
+            document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
+            document.getElementById('sidebar-toggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('hidden-mobile'));
+        }
+
+        function showSection(targetId) {
+            document.querySelectorAll('main section').forEach(sec => sec.classList.add('hidden'));
+            document.querySelectorAll('.sidebar nav a').forEach(link => link.classList.remove('active-link'));
+            const section = document.getElementById(targetId);
+            if(section) {
+                section.classList.remove('hidden');
+                document.querySelector(`.sidebar nav a[href="#${targetId}"]`).classList.add('active-link');
+            }
+             if (window.innerWidth < 1024) document.getElementById('sidebar').classList.add('hidden-mobile');
+            
+            switch(targetId) {
+                case 'dashboard': renderDashboard(); break;
+                case 'my-students': renderMyStudents(); break;
+                case 'manage-results': renderManageResults(); break;
+                case 'assignments': renderAssignments(); break;
+                case 'announcements': renderAnnouncements(); break;
+            }
+        }
+
+        function initializeTeacherData(teacherData) {
+            document.getElementById('topbar-teacher-name').textContent = teacherData.name;
+            document.getElementById('topbar-teacher-img').src = teacherData.profileImageUrl || `https://placehold.co/40x40/800080/FFFFFF?text=${teacherData.name.charAt(0)}`;
+            
+            const classIds = teacherData.classIds || [];
+            if (classIds.length > 0) {
+                const q = query(collection(db, "students"), where("classId", "in", classIds));
+                onSnapshot(q, (snapshot) => {
+                    assignedStudentsCache = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                    const activeSectionId = document.querySelector('main section:not(.hidden)')?.id;
+                     if (activeSectionId && ['dashboard', 'my-students', 'manage-results'].includes(activeSectionId)) {
+                        showSection(activeSectionId); 
+                    }
+                });
+            } else {
+                 assignedStudentsCache = [];
+            }
+
+            const assignmentsQuery = query(collection(db, "assignments"), where("teacher", "==", teacherData.name));
+            onSnapshot(assignmentsQuery, (snapshot) => {
+                assignmentsCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const activeSectionId = document.querySelector('main section:not(.hidden)')?.id;
+                if (activeSectionId === 'assignments') {
+                    renderAssignments();
+                }
+            });
+
+            showSection('dashboard');
+        }
+
+        function renderDashboard() {
+            const section = document.getElementById('dashboard');
+            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in"><h2 class="text-4xl font-extrabold text-purple-900 mb-8 border-b-2 border-purple-200 pb-4">Teacher Dashboard</h2><p>Welcome, ${teacherDataCache.name}. You have ${assignedStudentsCache.length} students assigned to your classes.</p></div>`;
+        }
+
+        async function renderMyStudents() {
+            const section = document.getElementById('my-students');
+            const classDocs = await getDocs(collection(db, 'classes'));
+            const classesCache = classDocs.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in">
+                <h2 class="text-4xl font-extrabold text-purple-900 mb-8 border-b-2 border-purple-200 pb-4">My Students</h2>
+                <div class="overflow-x-auto"><table class="min-w-full bg-white rounded-lg shadow-md"><thead class="bg-purple-600 text-white"><tr>
+                <th class="py-3 px-4 text-left">Name</th><th class="py-3 px-4 text-left">Roll No</th><th class="py-3 px-4 text-left">Class</th>
+                </tr></thead><tbody id="student-list-body"><td colspan="3" class="text-center p-4">Loading students...</td></tbody></table></div>
+            </div>`;
+            
+            const listBody = section.querySelector('#student-list-body');
+            if(assignedStudentsCache.length === 0) {
+                listBody.innerHTML = `<tr><td colspan="3" class="text-center p-4">No students found for your assigned classes.</td></tr>`;
+                return;
+            }
+            
+            listBody.innerHTML = assignedStudentsCache.map(student => {
+                const className = classesCache.find(c => c.id === student.classId)?.name || 'N/A';
+                return `<tr class="border-b"><td class="py-3 px-4">${student.name}</td><td class="py-3 px-4">${student.rollNo}</td><td class="py-3 px-4">${className}</td></tr>`;
+            }).join('');
+        }
+
+        async function renderManageResults() {
+            const section = document.getElementById('manage-results');
+            const classIds = teacherDataCache.classIds || [];
+            if (classIds.length === 0) {
+                 section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in">
+                    <h2 class="text-4xl font-extrabold text-purple-900 mb-8 border-b-2 border-purple-200 pb-4">Manage Results</h2>
+                    <p>You are not assigned to any classes. Please contact an administrator.</p>
+                </div>`;
+                return;
+            }
+
+            const classDocs = await getDocs(query(collection(db, 'classes'), where('__name__', 'in', classIds)));
+            const assignedClasses = classDocs.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            const classOptions = assignedClasses.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in">
+                <h2 class="text-4xl font-extrabold text-purple-900 mb-8 border-b-2 border-purple-200 pb-4">Manage Results</h2>
+                <div class="mb-6"><label for="class-select" class="block font-medium mb-2">Select a Class:</label><select id="class-select" class="w-full p-2 border rounded">${classOptions}</select></div>
+                <div id="results-student-list"></div>
+            </div>`;
+            
+            const classSelect = section.querySelector('#class-select');
+            classSelect.addEventListener('change', (e) => renderResultStudentList(e.target.value));
+            if(assignedClasses.length > 0) renderResultStudentList(assignedClasses[0].id);
+        }
+
+        function renderResultStudentList(classId) {
+            const container = document.getElementById('results-student-list');
+            const studentsInClass = assignedStudentsCache.filter(s => s.classId === classId);
+            if(studentsInClass.length === 0) {
+                container.innerHTML = `<p>No students in this class.</p>`;
+                return;
+            }
+            container.innerHTML = `<div class="space-y-4">${studentsInClass.map(s => `
+                <div class="bg-gray-100 p-4 rounded-lg">
+                    <p class="font-bold">${s.name} (Roll No: ${s.rollNo})</p>
+                    <div id="result-form-${s.id}" class="hidden mt-4 space-y-2"></div>
+                    <button class="add-result-btn bg-blue-500 text-white px-3 py-1 rounded mt-2" data-student-id="${s.id}">Add/View Results</button>
+                </div>
+            `).join('')}</div>`;
+
+            document.querySelectorAll('.add-result-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const studentId = e.currentTarget.dataset.studentId;
+                    const formContainer = document.getElementById(`result-form-${studentId}`);
+                    formContainer.classList.toggle('hidden');
+                    if(!formContainer.classList.contains('hidden')) {
+                        renderResultForm(studentId, formContainer);
+                    }
+                });
+            });
+        }
+        
+        function renderResultForm(studentId, container) {
+            container.innerHTML = `
+                <h4 class="font-semibold">Add New Result</h4>
+                <form class="add-result-form grid grid-cols-1 md:grid-cols-5 gap-4 items-end" data-student-id="${studentId}">
+                    <input type="text" placeholder="Exam Name (e.g., Mid-Term)" class="result-exam-name p-2 border rounded">
+                    <input type="text" placeholder="Subject" class="result-subject p-2 border rounded">
+                    <input type="number" placeholder="Total Marks" class="result-total-marks p-2 border rounded">
+                    <input type="number" placeholder="Obtained Marks" class="result-obtained-marks p-2 border rounded">
+                    <button type="submit" class="bg-green-500 text-white px-3 py-2 rounded">Save Result</button>
+                </form>
+                <div class="mt-4 border-t pt-4">
+                    <h4 class="font-semibold">Existing Results</h4>
+                    <div class="existing-results-list space-y-2 mt-2">Loading...</div>
+                </div>
+            `;
+            
+            const resultsList = container.querySelector('.existing-results-list');
+            const q = query(collection(db, `students/${studentId}/results`), orderBy('examDate', 'desc'));
+            onSnapshot(q, snapshot => {
+                if(snapshot.empty) { resultsList.innerHTML = `<p class="text-gray-500">No results found.</p>`; return; }
+                resultsList.innerHTML = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return `<div class="bg-gray-200 p-2 rounded flex justify-between"><span>${data.examName} - ${data.subject}: ${data.obtainedMarks}/${data.totalMarks}</span></div>`;
+                }).join('');
+            });
+
+            container.querySelector('.add-result-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = e.currentTarget;
+                const resultData = {
+                    examName: form.querySelector('.result-exam-name').value,
+                    subject: form.querySelector('.result-subject').value,
+                    totalMarks: form.querySelector('.result-total-marks').value,
+                    obtainedMarks: form.querySelector('.result-obtained-marks').value,
+                    grade: 'N/A', // Simple grade for now
+                    teacherId: teacherDataCache.id,
+                    examDate: serverTimestamp()
+                };
+
+                if(!resultData.examName || !resultData.subject) { alert("Please fill all fields"); return; }
+                await addDoc(collection(db, `students/${studentId}/results`), resultData);
+                form.reset();
+            });
+        }
+
+        async function renderAssignments() {
+            const section = document.getElementById('assignments');
+             const classDocs = await getDocs(query(collection(db, 'classes'), where('__name__', 'in', teacherDataCache.classIds || [''])));
+            const assignedClasses = classDocs.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const classOptions = assignedClasses.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+
+            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in">
+                <h2 class="text-4xl font-extrabold text-purple-900 mb-8 border-b-2 border-purple-200 pb-4">Manage Assignments</h2>
+                <button id="add-assignment-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg font-medium mb-6">Create New Assignment</button>
+                <div id="assignment-form-container" class="hidden bg-purple-50 p-6 rounded-lg shadow-md mb-8">
+                     <h3 class="text-2xl font-bold text-purple-800 mb-4">New Assignment</h3>
+                    <form id="assignment-form" class="space-y-4">
+                        <div><label>Title</label><input type="text" id="ass-title" class="w-full p-2 border rounded" required></div>
+                        <div><label>Description</label><textarea id="ass-desc" class="w-full p-2 border rounded"></textarea></div>
+                        <div><label>Due Date</label><input type="date" id="ass-due" class="w-full p-2 border rounded" value="${new Date().toISOString().split('T')[0]}" required></div>
+                        <div><label>Assign To (Class)</label><select id="ass-to" class="w-full p-2 border rounded" required>${classOptions}</select></div>
+                        <div class="flex justify-end space-x-4"><button type="button" id="cancel-ass-form" class="bg-gray-300 p-2 rounded">Cancel</button><button type="submit" class="bg-purple-600 text-white p-2 rounded">Create</button></div>
+                    </form>
+                </div>
+                <div id="assignment-list" class="space-y-4"></div></div>`;
+            
+            const list = section.querySelector('#assignment-list');
+            list.innerHTML = assignmentsCache.map(ass => `<div class="bg-gray-100 p-4 rounded-lg"><div class="flex justify-between items-start"><h3 class="font-bold text-lg">${ass.title}</h3><div><button class="delete-ass-btn text-red-600" data-id="${ass.id}"><i class="fas fa-trash"></i></button></div></div><p class="text-sm">For: ${ass.assignedTo} | Due: ${ass.dueDate}</p></div>`).join('');
+            
+            section.querySelector('#add-assignment-btn').addEventListener('click', () => document.getElementById('assignment-form-container').classList.remove('hidden'));
+            section.querySelector('#cancel-ass-form').addEventListener('click', () => document.getElementById('assignment-form-container').classList.add('hidden'));
+            section.querySelector('#assignment-form').addEventListener('submit', saveAssignment);
+            section.querySelectorAll('.delete-ass-btn').forEach(b => b.addEventListener('click', e => deleteAssignment(e.currentTarget.dataset.id)));
+        }
+
+        async function saveAssignment(e){
+            e.preventDefault();
+            const data = { 
+                title: document.getElementById('ass-title').value, 
+                description: document.getElementById('ass-desc').value, 
+                dueDate: document.getElementById('ass-due').value, 
+                assignedTo: document.getElementById('ass-to').value, 
+                teacher: teacherDataCache.name
+            };
+            await addDoc(collection(db, "assignments"), { ...data, submissions: [] });
+            alert('Assignment saved!'); 
+            document.getElementById('assignment-form-container').classList.add('hidden');
+            document.getElementById('assignment-form').reset();
+        }
+
+        async function deleteAssignment(id) { 
+            if(confirm('Delete this assignment?')) { 
+                await deleteDoc(doc(collection(db, "assignments"), id)); 
+                alert('Assignment deleted.'); 
+            }
+        }
+
+        function renderAnnouncements() {
+            const section = document.getElementById('announcements');
+            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in">
+                <h2 class="text-4xl font-extrabold text-purple-900 mb-8 border-b-2 border-purple-200 pb-4">Announcements</h2>
+                <div id="announcement-list" class="space-y-4"></div>
+            </div>`;
+            const list = section.querySelector('#announcement-list');
+            onSnapshot(query(collection(db, "announcements"), orderBy("date", "desc")), (snapshot) => {
+                if(snapshot.empty) { list.innerHTML = `<p class="text-gray-500">No announcements found.</p>`; return; }
+                list.innerHTML = snapshot.docs.map(doc => {
+                    const ann = doc.data();
+                    return `<div class="bg-gray-100 p-4 rounded-lg"><h3 class="font-bold text-lg">${ann.title}</h3><p>${ann.content}</p><p class="text-sm text-gray-500 mt-2">Date: ${ann.date}</p></div>`;
+                }).join('');
+            });
+        }
+    </script>
+</body>
+</html>
+

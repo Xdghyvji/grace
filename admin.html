@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Grace Academy - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .sidebar { transition: transform 0.3s ease-in-out; }
+        .sidebar.hidden-mobile { transform: translateX(-100%); }
+        @media (min-width: 1024px) { .sidebar.hidden-mobile { transform: translateX(0); } }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+        .loader { border: 8px solid #f3f3f3; border-top: 8px solid #3B82F6; border-radius: 50%; width: 60px; height: 60px; animation: spin 2s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .active-link { background-color: #1D4ED8; color: white; }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800 bg-gray-50 flex min-h-screen">
+
+    <div id="loading-overlay">
+        <div class="loader"></div>
+        <p id="loading-text" class="mt-4 text-lg text-gray-700">Loading Admin Panel...</p>
+    </div>
+
+    <aside id="sidebar" class="sidebar bg-gradient-to-br from-blue-700 to-blue-900 text-white w-64 p-6 space-y-6 flex flex-col hidden-mobile fixed inset-y-0 left-0 lg:relative lg:translate-x-0 z-40 shadow-lg">
+        <!-- Sidebar content will be dynamically populated -->
+    </aside>
+
+    <div class="flex-1 flex flex-col">
+        <header class="bg-white shadow-md p-4 flex justify-between items-center lg:hidden sticky top-0 z-30">
+            <button id="sidebar-toggle" class="text-blue-700 focus:outline-none">
+                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            <h1 class="text-2xl font-bold text-blue-900">Admin Panel</h1>
+            <div class="flex items-center space-x-3">
+                <span class="font-medium text-gray-700 hidden sm:block" id="topbar-admin-name">Admin</span>
+                <img id="topbar-admin-img" src="https://placehold.co/40x40/FF0000/FFFFFF?text=A" alt="Admin Profile" class="h-10 w-10 rounded-full border-2 border-red-500">
+            </div>
+        </header>
+
+        <main class="flex-1 p-6 lg:p-10 bg-gray-50">
+            <!-- Main content sections will be dynamically injected here -->
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc, query, orderBy, serverTimestamp, writeBatch, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA65vwfeuvsxnVSmlTof1_khaPmNtiMMv0",
+            authDomain: "non-ruled.firebaseapp.com",
+            projectId: "non-ruled",
+            storageBucket: "non-ruled.firebasestorage.app",
+            messagingSenderId: "981177762303",
+            appId: "1:981177762303:web:7db5c95c3b264444e267ca",
+            measurementId: "G-E3TY5JLVT5"
+        };
+        
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let studentsCache = [];
+        let teachersCache = [];
+        let classesCache = [];
+        let announcementsCache = [];
+        let blogPostsCache = [];
+        let assignmentsCache = [];
+        let paymentRequestsCache = [];
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user && !user.isAnonymous) {
+                const userDocRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userDocRef);
+
+                if (userDoc.exists() && userDoc.data().role === 'admin') {
+                    const adminData = userDoc.data();
+                    document.getElementById('topbar-admin-name').textContent = adminData.name || 'Admin';
+                    document.getElementById('topbar-admin-img').src = adminData.profileImageUrl || `https://placehold.co/40x40/FF0000/FFFFFF?text=${(adminData.name || 'A').charAt(0)}`;
+                    
+                    populateUI();
+                    initializeListeners();
+                    showSection('dashboard');
+                } else {
+                    loadingText.textContent = 'Access Denied. Redirecting...';
+                    window.location.href = 'login.html';
+                }
+            } else {
+                loadingText.textContent = 'Please log in. Redirecting...';
+                window.location.href = 'login.html';
+            }
+        });
+
+        const studentsCollection = collection(db, 'students');
+        const teachersCollection = collection(db, 'teachers');
+        const classesCollection = collection(db, 'classes');
+        const announcementsCollection = collection(db, 'announcements');
+        const blogPostsCollection = collection(db, 'blogPosts');
+        const assignmentsCollection = collection(db, 'assignments');
+        const paymentSettingsDoc = doc(db, 'settings', 'payment');
+        const paymentRequestsCollection = collection(db, 'paymentRequests');
+
+        function initializeListeners() {
+            onSnapshot(query(studentsCollection, orderBy('name')), (snapshot) => {
+                studentsCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                updateDashboardCounts();
+                if (document.getElementById('manage-students') && !document.getElementById('manage-students').classList.contains('hidden')) renderStudents();
+                if (document.getElementById('fee-management') && !document.getElementById('fee-management').classList.contains('hidden')) renderFeeManagement();
+            });
+
+            onSnapshot(query(teachersCollection, orderBy('name')), (snapshot) => {
+                teachersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                updateDashboardCounts();
+                if (document.getElementById('manage-teachers') && !document.getElementById('manage-teachers').classList.contains('hidden')) renderTeachers();
+            });
+            
+            onSnapshot(query(classesCollection, orderBy('name')), (snapshot) => {
+                classesCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (document.getElementById('manage-classes') && !document.getElementById('manage-classes').classList.contains('hidden')) renderClasses();
+            });
+
+            onSnapshot(query(announcementsCollection, orderBy('date', 'desc')), (snapshot) => {
+                announcementsCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (document.getElementById('manage-announcements') && !document.getElementById('manage-announcements').classList.contains('hidden')) renderAnnouncements();
+            });
+
+            onSnapshot(query(blogPostsCollection, orderBy('date', 'desc')), (snapshot) => {
+                blogPostsCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                updateDashboardCounts();
+                if (document.getElementById('manage-blog') && !document.getElementById('manage-blog').classList.contains('hidden')) renderBlogPosts();
+            });
+
+            onSnapshot(query(assignmentsCollection, orderBy('dueDate', 'desc')), (snapshot) => {
+                assignmentsCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                updateDashboardCounts();
+                if (document.getElementById('manage-assignments') && !document.getElementById('manage-assignments').classList.contains('hidden')) renderAssignments();
+            });
+            
+            onSnapshot(query(paymentRequestsCollection, orderBy('submittedAt', 'desc')), (snapshot) => {
+                paymentRequestsCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (document.getElementById('fee-management') && !document.getElementById('fee-management').classList.contains('hidden')) renderFeeManagement();
+            });
+
+             setTimeout(() => loadingOverlay.style.display = 'none', 1500);
+        }
+
+        function populateUI() {
+            document.getElementById('sidebar').innerHTML = `
+                <div class="flex items-center space-x-3 border-b border-blue-600 pb-4"><img src="https://placehold.co/50x50/FFFFFF/3B82F6?text=GA" alt="Academy Logo" class="h-12 w-auto"><span class="text-2xl font-bold tracking-tight">Admin Panel</span></div>
+                <nav class="flex-1 space-y-2">
+                    <a href="#dashboard" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-blue-600 transition duration-200"><i class="fas fa-tachometer-alt w-6"></i><span>Dashboard</span></a>
+                    <div class="border-t border-blue-600 pt-4 mt-4"></div>
+                    <p class="text-blue-200 text-sm uppercase font-semibold pl-4 pt-2">User & Class Management</p>
+                    <a href="#manage-students" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-blue-600 transition duration-200"><i class="fas fa-user-graduate w-6"></i><span>Students</span></a>
+                    <a href="#manage-teachers" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-blue-600 transition duration-200"><i class="fas fa-chalkboard-teacher w-6"></i><span>Teachers</span></a>
+                    <a href="#manage-classes" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-blue-600 transition duration-200"><i class="fas fa-school w-6"></i><span>Classes</span></a>
+                    <div class="border-t border-blue-600 pt-4 mt-4"></div>
+                    <p class="text-blue-200 text-sm uppercase font-semibold pl-4 pt-2">Financial</p>
+                    <a href="#fee-management" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-blue-600 transition duration-200"><i class="fas fa-file-invoice-dollar w-6"></i><span>Fee Management</span></a>
+                    <a href="#payment-settings" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-blue-600 transition duration-200"><i class="fas fa-cogs w-6"></i><span>Payment Settings</span></a>
+                    <div class="border-t border-blue-600 pt-4 mt-4"></div>
+                    <p class="text-blue-200 text-sm uppercase font-semibold pl-4 pt-2">Content & Academics</p>
+                    <a href="#manage-announcements" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-blue-600 transition duration-200"><i class="fas fa-bullhorn w-6"></i><span>Announcements</span></a>
+                    <a href="#manage-blog" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-blue-600 transition duration-200"><i class="fas fa-blog w-6"></i><span>Blog</span></a>
+                    <a href="#manage-assignments" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-blue-600 transition duration-200"><i class="fas fa-tasks w-6"></i><span>Assignments</span></a>
+                </nav>
+                <div class="border-t border-blue-600 pt-4"><a href="index.html" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-blue-600 transition duration-200"><i class="fas fa-home w-6"></i><span>Back to Home</span></a><button id="logout-button" class="w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-lg bg-red-600 hover:bg-red-700 transition duration-200 mt-2"><i class="fas fa-sign-out-alt w-6"></i><span>Logout</span></button></div>`;
+            
+            document.querySelector('main').innerHTML = `
+                <section id="dashboard" class="hidden"></section>
+                <section id="manage-students" class="hidden"></section>
+                <section id="manage-teachers" class="hidden"></section>
+                <section id="manage-classes" class="hidden"></section>
+                <section id="fee-management" class="hidden"></section>
+                <section id="payment-settings" class="hidden"></section>
+                <section id="manage-announcements" class="hidden"></section>
+                <section id="manage-blog" class="hidden"></section>
+                <section id="manage-assignments" class="hidden"></section>`;
+
+            document.querySelectorAll('.sidebar nav a').forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); showSection(link.getAttribute('href').substring(1)); }); });
+            document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
+            document.getElementById('sidebar-toggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('hidden-mobile'));
+        }
+
+        function showSection(targetId) {
+            document.querySelectorAll('main section').forEach(sec => sec.classList.add('hidden'));
+            document.querySelectorAll('.sidebar nav a').forEach(link => link.classList.remove('active-link'));
+            const section = document.getElementById(targetId);
+            if (section) {
+                section.classList.remove('hidden');
+                document.querySelector(`.sidebar nav a[href="#${targetId}"]`).classList.add('active-link');
+
+                switch(targetId) {
+                    case 'dashboard': renderDashboard(); break;
+                    case 'manage-students': renderStudents(); break;
+                    case 'manage-teachers': renderTeachers(); break;
+                    case 'manage-classes': renderClasses(); break;
+                    case 'fee-management': renderFeeManagement(); break;
+                    case 'payment-settings': renderPaymentSettings(); break;
+                    case 'manage-announcements': renderAnnouncements(); break;
+                    case 'manage-blog': renderBlogPosts(); break;
+                    case 'manage-assignments': renderAssignments(); break;
+                }
+            }
+            if (window.innerWidth < 1024) document.getElementById('sidebar').classList.add('hidden-mobile');
+        }
+        
+        function updateDashboardCounts(){
+             const studentCount = document.getElementById('total-students');
+            if (studentCount) studentCount.textContent = studentsCache.length;
+             const teacherCount = document.getElementById('total-teachers');
+            if (teacherCount) teacherCount.textContent = teachersCache.length;
+             const assignmentCount = document.getElementById('total-assignments');
+            if(assignmentCount) assignmentCount.textContent = assignmentsCache.length;
+             const blogCount = document.getElementById('total-blog-posts');
+            if(blogCount) blogCount.textContent = blogPostsCache.length;
+        }
+
+        function renderDashboard() {
+            const section = document.getElementById('dashboard');
+            section.innerHTML = `
+                <div class="bg-white p-8 rounded-lg shadow-xl fade-in">
+                    <h2 class="text-4xl font-extrabold text-blue-900 mb-8 border-b-2 border-blue-200 pb-4">Admin Dashboard</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+                         <div class="bg-blue-50 p-6 rounded-lg shadow-md flex items-center space-x-4">
+                            <i class="fas fa-user-graduate text-blue-600 text-4xl"></i>
+                            <div><p class="text-gray-600 text-sm">Total Students</p><p class="text-3xl font-bold text-blue-800" id="total-students">0</p></div>
+                        </div>
+                        <div class="bg-green-50 p-6 rounded-lg shadow-md flex items-center space-x-4">
+                            <i class="fas fa-chalkboard-teacher text-green-600 text-4xl"></i>
+                            <div><p class="text-gray-600 text-sm">Total Teachers</p><p class="text-3xl font-bold text-green-800" id="total-teachers">0</p></div>
+                        </div>
+                        <div class="bg-yellow-50 p-6 rounded-lg shadow-md flex items-center space-x-4">
+                            <i class="fas fa-tasks text-yellow-600 text-4xl"></i>
+                            <div><p class="text-gray-600 text-sm">Total Assignments</p><p class="text-3xl font-bold text-yellow-800" id="total-assignments">0</p></div>
+                        </div>
+                        <div class="bg-purple-50 p-6 rounded-lg shadow-md flex items-center space-x-4">
+                            <i class="fas fa-blog text-purple-600 text-4xl"></i>
+                            <div><p class="text-gray-600 text-sm">Blog Posts</p><p class="text-3xl font-bold text-purple-800" id="total-blog-posts">0</p></div>
+                        </div>
+                    </div>
+                </div>`;
+            updateDashboardCounts();
+        }
+
+        async function renderPaymentSettings() {
+            const section = document.getElementById('payment-settings');
+            const settingsSnap = await getDoc(paymentSettingsDoc);
+            const settings = settingsSnap.exists() ? settingsSnap.data() : {};
+            section.innerHTML = `
+                <div class="bg-white p-8 rounded-lg shadow-xl fade-in">
+                    <h2 class="text-4xl font-extrabold text-gray-800 mb-8 border-b pb-4">Payment Settings</h2>
+                    <form id="payment-settings-form" class="space-y-6">
+                        <div><label class="font-medium">Easypaisa Account Title</label><input type="text" id="easypaisa-title" class="w-full p-2 border rounded mt-1" value="${settings.easypaisaTitle || ''}"></div>
+                        <div><label class="font-medium">Easypaisa Account Number</label><input type="text" id="easypaisa-number" class="w-full p-2 border rounded mt-1" value="${settings.easypaisaNumber || ''}"></div>
+                        <div><label class="font-medium">Bank Name</label><input type="text" id="bank-name" class="w-full p-2 border rounded mt-1" value="${settings.bankName || ''}"></div>
+                        <div><label class="font-medium">Bank Account Title</label><input type="text" id="bank-title" class="w-full p-2 border rounded mt-1" value="${settings.bankTitle || ''}"></div>
+                        <div><label class="font-medium">Bank Account Number (IBAN)</label><input type="text" id="bank-iban" class="w-full p-2 border rounded mt-1" value="${settings.bankIban || ''}"></div>
+                        <div class="flex justify-end"><button type="submit" class="bg-blue-600 text-white py-2 px-6 rounded-lg font-semibold">Save Settings</button></div>
+                    </form>
+                </div>`;
+            document.getElementById('payment-settings-form').addEventListener('submit', savePaymentSettings);
+        }
+
+        async function savePaymentSettings(e) {
+            e.preventDefault();
+            const data = {
+                easypaisaTitle: document.getElementById('easypaisa-title').value,
+                easypaisaNumber: document.getElementById('easypaisa-number').value,
+                bankName: document.getElementById('bank-name').value,
+                bankTitle: document.getElementById('bank-title').value,
+                bankIban: document.getElementById('bank-iban').value,
+            };
+            await setDoc(paymentSettingsDoc, data, { merge: true });
+            alert('Payment settings saved!');
+        }
+        
+        function renderFeeManagement() {
+            const section = document.getElementById('fee-management');
+            section.innerHTML = `
+                <div class="bg-white p-8 rounded-lg shadow-xl fade-in">
+                    <h2 class="text-4xl font-extrabold text-gray-800 mb-8 border-b pb-4">Fee Management</h2>
+                    <div class="mb-12">
+                        <h3 class="text-2xl font-bold text-gray-700 mb-4">Student Fee Status</h3>
+                        <div class="overflow-x-auto"><table class="min-w-full bg-white rounded-lg shadow-md"><thead class="bg-gray-700 text-white"><tr>
+                            <th class="py-3 px-4 text-left">Student Name</th><th class="py-3 px-4 text-left">Class</th><th class="py-3 px-4 text-left">Fee Status</th><th class="py-3 px-4 text-left">Action</th>
+                        </tr></thead><tbody id="fee-student-list"></tbody></table></div>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-700 mb-4">Pending Payment Requests</h3>
+                        <div id="payment-requests-list" class="space-y-4"></div>
+                    </div>
+                </div>`;
+            
+            const listBody = section.querySelector('#fee-student-list');
+            listBody.innerHTML = studentsCache.map(student => {
+                const isPaid = student.feeStatus === 'Paid';
+                const statusClass = isPaid ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800';
+                const className = classesCache.find(c => c.id === student.classId)?.name || 'N/A';
+                return `<tr class="border-b">
+                    <td class="py-3 px-4">${student.name}</td>
+                    <td class="py-3 px-4">${className}</td>
+                    <td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-sm font-semibold ${statusClass}">${student.feeStatus || 'Unpaid'}</span></td>
+                    <td class="py-3 px-4">${!isPaid ? `<button class="mark-paid-btn bg-green-500 text-white px-3 py-1 rounded" data-id="${student.id}">Mark as Paid</button>` : 'Paid'}</td>
+                </tr>`;
+            }).join('');
+
+            const requestsList = section.querySelector('#payment-requests-list');
+            if (paymentRequestsCache.length === 0) {
+                requestsList.innerHTML = '<p class="text-gray-500">No pending payment requests.</p>';
+            } else {
+                requestsList.innerHTML = paymentRequestsCache.map(req => `
+                    <div class="bg-gray-100 p-4 rounded-lg flex justify-between items-center">
+                        <div>
+                            <p class="font-bold">${req.studentName} (${req.studentClass})</p>
+                            <a href="${req.proofUrl}" target="_blank" class="text-blue-600 hover:underline">View Proof</a>
+                        </div>
+                        <div>
+                            <button class="approve-payment-btn bg-green-600 text-white px-3 py-1 rounded mr-2" data-req-id="${req.id}" data-student-id="${req.studentId}">Approve</button>
+                            <button class="reject-payment-btn bg-red-600 text-white px-3 py-1 rounded" data-req-id="${req.id}">Reject</button>
+                        </div>
+                    </div>`).join('');
+            }
+            
+            section.querySelectorAll('.mark-paid-btn').forEach(btn => btn.addEventListener('click', e => markAsPaid(e.currentTarget.dataset.id)));
+            section.querySelectorAll('.approve-payment-btn').forEach(btn => btn.addEventListener('click', e => approvePayment(e.currentTarget.dataset.reqId, e.currentTarget.dataset.studentId)));
+            section.querySelectorAll('.reject-payment-btn').forEach(btn => btn.addEventListener('click', e => rejectPayment(e.currentTarget.dataset.reqId)));
+        }
+
+        async function markAsPaid(studentId) {
+            if (!confirm('Are you sure you want to mark this student as paid for the current month?')) return;
+            const studentRef = doc(studentsCollection, studentId);
+            const historyRef = collection(db, `students/${studentId}/paymentHistory`);
+            const batch = writeBatch(db);
+            batch.update(studentRef, { feeStatus: 'Paid', lastPaymentDate: serverTimestamp() });
+            batch.set(doc(historyRef), { amount: 'N/A (Manual)', date: serverTimestamp(), method: 'Manual/Cash', status: 'Approved' });
+            await batch.commit();
+            alert('Student marked as paid!');
+        }
+
+        async function approvePayment(reqId, studentId) {
+            if (!confirm('Approve this payment?')) return;
+            const studentRef = doc(studentsCollection, studentId);
+            const historyRef = collection(db, `students/${studentId}/paymentHistory`);
+            const requestRef = doc(paymentRequestsCollection, reqId);
+            const requestData = paymentRequestsCache.find(r => r.id === reqId);
+
+            const batch = writeBatch(db);
+            batch.update(studentRef, { feeStatus: 'Paid', lastPaymentDate: serverTimestamp() });
+            batch.set(doc(historyRef), { amount: 'N/A (Online)', date: requestData.submittedAt, method: 'Online', status: 'Approved', proofUrl: requestData.proofUrl });
+            batch.delete(requestRef);
+
+            await batch.commit();
+            alert('Payment approved!');
+        }
+
+        async function rejectPayment(reqId) {
+            if (!confirm('Reject this payment request?')) return;
+            await deleteDoc(doc(paymentRequestsCollection, reqId));
+            alert('Payment request rejected.');
+        }
+
+        async function createUser(email, password, role, profileData) {
+            try {
+                const tempApp = initializeApp(firebaseConfig, 'secondary-' + Date.now());
+                const tempAuth = getAuth(tempApp);
+                const userCredential = await createUserWithEmailAndPassword(tempAuth, email, password);
+                const newUser = userCredential.user;
+
+                const batch = writeBatch(db);
+                const userDocRef = doc(db, "users", newUser.uid);
+                batch.set(userDocRef, { role, email, createdAt: serverTimestamp() });
+
+                const profileDocRef = doc(db, `${role}s`, newUser.uid);
+                batch.set(profileDocRef, { ...profileData, email, uid: newUser.uid });
+
+                await batch.commit();
+                
+                console.log(`${role} account created successfully for ${email}`);
+                return true;
+            } catch (error) {
+                console.error(`Error creating ${role}:`, error);
+                alert(`Error: ${error.message}`);
+                return false;
+            }
+        }
+        
+        function renderStudents() {
+            const section = document.getElementById('manage-students');
+            section.innerHTML = `
+                <div class="bg-white p-8 rounded-lg shadow-xl fade-in">
+                    <h2 class="text-4xl font-extrabold text-blue-900 mb-8 border-b-2 border-blue-200 pb-4">Manage Students</h2>
+                    <button id="add-student-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium mb-6">Add New Student</button>
+                    <div id="student-form-container" class="hidden bg-blue-50 p-6 rounded-lg shadow-md mb-8"></div>
+                    <div class="overflow-x-auto"><table class="min-w-full bg-white rounded-lg shadow-md"><thead class="bg-blue-600 text-white"><tr>
+                        <th class="py-3 px-4 text-left">Name</th><th class="py-3 px-4 text-left">Roll No</th><th class="py-3 px-4 text-left">Class</th><th class="py-3 px-4 text-left">Actions</th>
+                    </tr></thead><tbody id="student-list-body"></tbody></table></div>
+                </div>`;
+            const listBody = section.querySelector('#student-list-body');
+            listBody.innerHTML = studentsCache.map(student => {
+                const className = classesCache.find(c => c.id === student.classId)?.name || 'N/A';
+                return `
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="py-3 px-4">${student.name}</td><td class="py-3 px-4">${student.rollNo}</td><td class="py-3 px-4">${className}</td>
+                    <td class="py-3 px-4">
+                        <button class="edit-student-btn text-blue-600 hover:text-blue-800 mr-2" data-id="${student.id}"><i class="fas fa-edit"></i></button>
+                        <button class="delete-student-btn text-red-600 hover:text-red-800" data-id="${student.id}"><i class="fas fa-trash"></i></button>
+                    </td></tr>`}).join('');
+            section.querySelector('#add-student-btn').addEventListener('click', () => showStudentForm());
+            section.querySelectorAll('.edit-student-btn').forEach(btn => btn.addEventListener('click', (e) => showStudentForm(e.currentTarget.dataset.id)));
+            section.querySelectorAll('.delete-student-btn').forEach(btn => btn.addEventListener('click', (e) => deleteStudent(e.currentTarget.dataset.id)));
+        }
+
+        function showStudentForm(id = null) {
+            const student = id ? studentsCache.find(s => s.id === id) : {};
+            const container = document.getElementById('student-form-container');
+            container.classList.remove('hidden');
+            const classOptions = classesCache.map(c => `<option value="${c.id}" ${student.classId === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
+            
+            container.innerHTML = `
+                <h3 class="text-2xl font-bold text-blue-800 mb-4">${id ? 'Edit' : 'Add'} Student</h3>
+                <form id="student-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <input type="hidden" id="student-id" value="${id || ''}">
+                    <div><label class="font-medium">Full Name</label><input type="text" id="student-name" class="w-full p-2 border rounded mt-1" value="${student.name || ''}" required></div>
+                    <div><label class="font-medium">Email</label><input type="email" id="student-email" class="w-full p-2 border rounded mt-1" value="${student.email || ''}" required ${id ? 'disabled' : ''}></div>
+                    ${!id ? `<div><label class="font-medium">Password</label><input type="password" id="student-password" class="w-full p-2 border rounded mt-1" required></div>` : ''}
+                    <div><label class="font-medium">Roll No</label><input type="text" id="student-rollNo" class="w-full p-2 border rounded mt-1" value="${student.rollNo || ''}" required></div>
+                    <div><label class="font-medium">Class</label><select id="student-classId" class="w-full p-2 border rounded mt-1" required><option value="">Select Class</option>${classOptions}</select></div>
+                    <div class="md:col-span-2 flex justify-end space-x-4 mt-4">
+                        <button type="button" id="cancel-student-form" class="bg-gray-300 p-2 rounded">Cancel</button>
+                        <button type="submit" class="bg-blue-600 text-white p-2 rounded">${id ? 'Update' : 'Save'} Student</button>
+                    </div></form>`;
+            document.getElementById('cancel-student-form').addEventListener('click', () => container.classList.add('hidden'));
+            document.getElementById('student-form').addEventListener('submit', saveStudent);
+        }
+
+        async function saveStudent(e) {
+            e.preventDefault();
+            const id = document.getElementById('student-id').value;
+            const profileData = { name: document.getElementById('student-name').value, rollNo: document.getElementById('student-rollNo').value, classId: document.getElementById('student-classId').value };
+            if(id) { await updateDoc(doc(studentsCollection, id), profileData); alert('Student updated!'); }
+            else { const email = document.getElementById('student-email').value; const password = document.getElementById('student-password').value; if (await createUser(email, password, 'student', profileData)) alert('Student created!'); }
+            document.getElementById('student-form-container').classList.add('hidden');
+        }
+
+        async function deleteStudent(id) {
+            if (confirm('Delete this student? This also deletes their login.')) { 
+                const batch = writeBatch(db);
+                batch.delete(doc(studentsCollection, id));
+                batch.delete(doc(db, "users", id));
+                await batch.commit();
+                alert('Student record and user role deleted. For this to fully work, you must enable the User Deletion extension in Firebase.'); 
+            }
+        }
+        
+        function renderTeachers() {
+            const section = document.getElementById('manage-teachers');
+            section.innerHTML = `
+                <div class="bg-white p-8 rounded-lg shadow-xl fade-in">
+                    <h2 class="text-4xl font-extrabold text-green-900 mb-8 border-b-2 border-green-200 pb-4">Manage Teachers</h2>
+                    <button id="add-teacher-btn" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-medium mb-6">Add New Teacher</button>
+                    <div id="teacher-form-container" class="hidden bg-green-50 p-6 rounded-lg shadow-md mb-8"></div>
+                    <div class="overflow-x-auto"><table class="min-w-full bg-white rounded-lg shadow-md"><thead class="bg-green-600 text-white"><tr>
+                        <th class="py-3 px-4 text-left">Name</th><th class="py-3 px-4 text-left">Email</th><th class="py-3 px-4 text-left">Assigned Classes</th><th class="py-3 px-4 text-left">Actions</th>
+                    </tr></thead><tbody id="teacher-list-body"></tbody></table></div>
+                </div>`;
+            const listBody = section.querySelector('#teacher-list-body');
+            listBody.innerHTML = teachersCache.map(t => {
+                const assignedClasses = (t.classIds || []).map(id => classesCache.find(c => c.id === id)?.name || 'Unknown Class').join(', ');
+                return `
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="py-3 px-4">${t.name}</td><td class="py-3 px-4">${t.email}</td><td class="py-3 px-4">${assignedClasses}</td>
+                    <td class="py-3 px-4"><button class="edit-teacher-btn text-blue-600 mr-2" data-id="${t.id}"><i class="fas fa-edit"></i></button><button class="delete-teacher-btn text-red-600" data-id="${t.id}"><i class="fas fa-trash"></i></button></td>
+                </tr>`}).join('');
+            section.querySelector('#add-teacher-btn').addEventListener('click', () => showTeacherForm());
+            section.querySelectorAll('.edit-teacher-btn').forEach(btn => btn.addEventListener('click', (e) => showTeacherForm(e.currentTarget.dataset.id)));
+            section.querySelectorAll('.delete-teacher-btn').forEach(btn => btn.addEventListener('click', (e) => deleteTeacher(e.currentTarget.dataset.id)));
+        }
+
+        function showTeacherForm(id = null) {
+            const teacher = id ? teachersCache.find(t => t.id === id) : {};
+            const container = document.getElementById('teacher-form-container');
+            container.classList.remove('hidden');
+            const classCheckboxes = classesCache.map(c => `
+                <label class="flex items-center space-x-2"><input type="checkbox" class="teacher-class-checkbox" value="${c.id}" ${(teacher.classIds || []).includes(c.id) ? 'checked' : ''}><span>${c.name}</span></label>
+            `).join('');
+
+            container.innerHTML = `
+                <h3 class="text-2xl font-bold text-green-800 mb-4">${id ? 'Edit' : 'Add'} Teacher</h3>
+                <form id="teacher-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <input type="hidden" id="teacher-id" value="${id || ''}">
+                    <div><label class="font-medium">Full Name</label><input type="text" id="teacher-name" class="w-full p-2 border rounded mt-1" value="${teacher.name || ''}" required></div>
+                    <div><label class="font-medium">Email</label><input type="email" id="teacher-email" class="w-full p-2 border rounded mt-1" value="${teacher.email || ''}" required ${id ? 'disabled' : ''}></div>
+                    ${!id ? `<div><label class="font-medium">Password</label><input type="password" id="teacher-password" class="w-full p-2 border rounded mt-1" required></div>` : ''}
+                    <div class="md:col-span-2"><label class="font-medium">Assign Classes</label><div class="mt-2 space-y-2">${classCheckboxes}</div></div>
+                    <div class="md:col-span-2 flex justify-end space-x-4 mt-4"><button type="button" id="cancel-teacher-form" class="bg-gray-300 p-2 rounded">Cancel</button><button type="submit" class="bg-green-600 text-white p-2 rounded">${id ? 'Update' : 'Save'} Teacher</button></div>
+                </form>`;
+            document.getElementById('cancel-teacher-form').addEventListener('click', () => container.classList.add('hidden'));
+            document.getElementById('teacher-form').addEventListener('submit', saveTeacher);
+        }
+
+        async function saveTeacher(e) {
+            e.preventDefault();
+            const id = document.getElementById('teacher-id').value;
+            const selectedClassIds = Array.from(document.querySelectorAll('.teacher-class-checkbox:checked')).map(cb => cb.value);
+            const profileData = { name: document.getElementById('teacher-name').value, classIds: selectedClassIds };
+            if(id) { await updateDoc(doc(teachersCollection, id), profileData); alert('Teacher updated!'); }
+            else { const email = document.getElementById('teacher-email').value; const password = document.getElementById('teacher-password').value; if(await createUser(email, password, 'teacher', profileData)) alert('Teacher created!'); }
+            document.getElementById('teacher-form-container').classList.add('hidden');
+        }
+
+        async function deleteTeacher(id) {
+            if (confirm('Delete this teacher?')) { 
+                const batch = writeBatch(db);
+                batch.delete(doc(teachersCollection, id));
+                batch.delete(doc(db, "users", id));
+                await batch.commit();
+                alert('Teacher record and user role deleted.'); 
+            }
+        }
+        
+        function renderClasses() {
+            const section = document.getElementById('manage-classes');
+            section.innerHTML = `
+                <div class="bg-white p-8 rounded-lg shadow-xl fade-in">
+                    <h2 class="text-4xl font-extrabold text-purple-900 mb-8 border-b-2 border-purple-200 pb-4">Manage Classes</h2>
+                    <form id="add-class-form" class="mb-8 flex items-center space-x-4"><input type="text" id="class-name" placeholder="New Class Name (e.g., Grade 9 - A)" class="w-full p-2 border rounded" required><button type="submit" class="bg-purple-600 text-white py-2 px-6 rounded-lg font-semibold">Add Class</button></form>
+                    <div id="class-list" class="space-y-2"></div>
+                </div>`;
+            const list = section.querySelector('#class-list');
+            list.innerHTML = classesCache.map(c => `
+                <div class="bg-gray-100 p-3 rounded-lg flex justify-between items-center">
+                    <span class="font-medium">${c.name}</span>
+                    <button class="delete-class-btn text-red-600" data-id="${c.id}"><i class="fas fa-trash"></i></button>
+                </div>`).join('');
+            
+            section.querySelector('#add-class-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const nameInput = document.getElementById('class-name');
+                await addDoc(classesCollection, { name: nameInput.value, createdAt: serverTimestamp() });
+                nameInput.value = '';
+                alert('Class added!');
+            });
+            section.querySelectorAll('.delete-class-btn').forEach(b => b.addEventListener('click', async (e) => {
+                if(confirm('Delete this class?')) {
+                    await deleteDoc(doc(classesCollection, e.currentTarget.dataset.id));
+                    alert('Class deleted.');
+                }
+            }));
+        }
+
+        function renderAnnouncements() {
+            const section = document.getElementById('manage-announcements');
+            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in"><h2 class="text-4xl font-extrabold text-yellow-900 mb-8 border-b-2 border-yellow-200 pb-4">Manage Announcements</h2><button id="add-announcement-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white px-5 py-2 rounded-lg font-medium mb-6">Add Announcement</button><div id="announcement-form-container" class="hidden bg-yellow-50 p-6 rounded-lg shadow-md mb-8"></div><div id="announcement-list" class="space-y-4"></div></div>`;
+            const list = section.querySelector('#announcement-list');
+            list.innerHTML = announcementsCache.map(ann => `<div class="bg-gray-100 p-4 rounded-lg"><div class="flex justify-between items-start"><h3 class="font-bold text-lg">${ann.title}</h3><div><button class="edit-ann-btn text-blue-600 mr-2" data-id="${ann.id}"><i class="fas fa-edit"></i></button><button class="delete-ann-btn text-red-600" data-id="${ann.id}"><i class="fas fa-trash"></i></button></div></div><p>${ann.content}</p><p class="text-sm text-gray-500 mt-2">Date: ${ann.date}</p></div>`).join('');
+            section.querySelector('#add-announcement-btn').addEventListener('click', () => showAnnouncementForm());
+            section.querySelectorAll('.edit-ann-btn').forEach(b => b.addEventListener('click', e => showAnnouncementForm(e.currentTarget.dataset.id)));
+            section.querySelectorAll('.delete-ann-btn').forEach(b => b.addEventListener('click', e => deleteAnnouncement(e.currentTarget.dataset.id)));
+        }
+        function showAnnouncementForm(id = null) {
+            const ann = id ? announcementsCache.find(a => a.id === id) : {};
+            const container = document.getElementById('announcement-form-container');
+            container.classList.remove('hidden');
+            container.innerHTML = `<h3 class="text-2xl font-bold text-yellow-800 mb-4">${id ? 'Edit' : 'Add'} Announcement</h3><form id="announcement-form" class="space-y-4"><input type="hidden" id="ann-id" value="${id || ''}"><div><label>Title</label><input type="text" id="ann-title" class="w-full p-2 border rounded" value="${ann.title || ''}" required></div><div><label>Content</label><textarea id="ann-content" class="w-full p-2 border rounded" required>${ann.content || ''}</textarea></div><div><label>Date</label><input type="date" id="ann-date" class="w-full p-2 border rounded" value="${ann.date || new Date().toISOString().split('T')[0]}" required></div><div class="flex justify-end space-x-4"><button type="button" id="cancel-ann-form" class="bg-gray-300 p-2 rounded">Cancel</button><button type="submit" class="bg-yellow-600 text-white p-2 rounded">${id ? 'Update' : 'Save'}</button></div></form>`;
+            document.getElementById('cancel-ann-form').addEventListener('click', () => container.classList.add('hidden'));
+            document.getElementById('announcement-form').addEventListener('submit', saveAnnouncement);
+        }
+        async function saveAnnouncement(e) {
+            e.preventDefault();
+            const id = document.getElementById('ann-id').value;
+            const data = { title: document.getElementById('ann-title').value, content: document.getElementById('ann-content').value, date: document.getElementById('ann-date').value };
+            if (id) { await updateDoc(doc(announcementsCollection, id), data); } else { await addDoc(announcementsCollection, data); }
+            alert('Announcement saved!'); document.getElementById('announcement-form-container').classList.add('hidden');
+        }
+        async function deleteAnnouncement(id) { if(confirm('Delete announcement?')) { await deleteDoc(doc(announcementsCollection, id)); alert('Deleted.'); }}
+
+        function renderBlogPosts() {
+            const section = document.getElementById('manage-blog');
+            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in"><h2 class="text-4xl font-extrabold text-purple-900 mb-8 border-b-2 border-purple-200 pb-4">Manage Blog Posts</h2><button id="add-blog-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg font-medium mb-6">Write New Post</button><div id="blog-form-container" class="hidden bg-purple-50 p-6 rounded-lg shadow-md mb-8"></div><div id="blog-list" class="space-y-4"></div></div>`;
+            const list = section.querySelector('#blog-list');
+            list.innerHTML = blogPostsCache.map(post => `<div class="bg-gray-100 p-4 rounded-lg"><div class="flex justify-between items-start"><h3 class="font-bold text-lg">${post.title}</h3><div><button class="edit-blog-btn text-blue-600 mr-2" data-id="${post.id}"><i class="fas fa-edit"></i></button><button class="delete-blog-btn text-red-600" data-id="${post.id}"><i class="fas fa-trash"></i></button></div></div><p class="text-sm text-gray-500">By ${post.author} on ${post.date}</p></div>`).join('');
+            section.querySelector('#add-blog-btn').addEventListener('click', () => showBlogPostForm());
+            section.querySelectorAll('.edit-blog-btn').forEach(b => b.addEventListener('click', e => showBlogPostForm(e.currentTarget.dataset.id)));
+            section.querySelectorAll('.delete-blog-btn').forEach(b => b.addEventListener('click', e => deleteBlogPost(e.currentTarget.dataset.id)));
+        }
+        function showBlogPostForm(id = null) {
+            const post = id ? blogPostsCache.find(p => p.id === id) : {};
+            const container = document.getElementById('blog-form-container');
+            container.classList.remove('hidden');
+            container.innerHTML = `<h3 class="text-2xl font-bold text-purple-800 mb-4">${id ? 'Edit' : 'New'} Blog Post</h3><form id="blog-form" class="space-y-4"><input type="hidden" id="blog-id" value="${id || ''}"><div><label>Title</label><input type="text" id="blog-title" class="w-full p-2 border rounded" value="${post.title || ''}" required></div><div><label>Author</label><input type="text" id="blog-author" class="w-full p-2 border rounded" value="${post.author || 'Admin'}" required></div><div><label>Date</label><input type="date" id="blog-date" class="w-full p-2 border rounded" value="${post.date || new Date().toISOString().split('T')[0]}" required></div><div><label>Category</label><input type="text" id="blog-category" class="w-full p-2 border rounded" value="${post.category || ''}"></div><div><label>Image URL</label><input type="url" id="blog-image" class="w-full p-2 border rounded" value="${post.imageUrl || ''}"></div><div><label>Excerpt</label><textarea id="blog-excerpt" class="w-full p-2 border rounded" rows="3">${post.excerpt || ''}</textarea></div><div><label>Content (HTML allowed)</label><textarea id="blog-content" class="w-full p-2 border rounded" rows="10" required>${post.content || ''}</textarea></div><div class="flex justify-end space-x-4"><button type="button" id="cancel-blog-form" class="bg-gray-300 p-2 rounded">Cancel</button><button type="submit" class="bg-purple-600 text-white p-2 rounded">${id ? 'Update' : 'Publish'}</button></div></form>`;
+            document.getElementById('cancel-blog-form').addEventListener('click', () => container.classList.add('hidden'));
+            document.getElementById('blog-form').addEventListener('submit', saveBlogPost);
+        }
+        async function saveBlogPost(e) {
+            e.preventDefault();
+            const id = document.getElementById('blog-id').value;
+            const data = { title: document.getElementById('blog-title').value, author: document.getElementById('blog-author').value, date: document.getElementById('blog-date').value, category: document.getElementById('blog-category').value, imageUrl: document.getElementById('blog-image').value, excerpt: document.getElementById('blog-excerpt').value, content: document.getElementById('blog-content').value, };
+            if(id) { await updateDoc(doc(blogPostsCollection, id), data); } else { await addDoc(blogPostsCollection, data); }
+            alert('Blog post saved!'); document.getElementById('blog-form-container').classList.add('hidden');
+        }
+        async function deleteBlogPost(id) { if(confirm('Delete this blog post?')) { await deleteDoc(doc(blogPostsCollection, id)); alert('Post deleted.'); }}
+
+        function renderAssignments() {
+            const section = document.getElementById('manage-assignments');
+            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in"><h2 class="text-4xl font-extrabold text-indigo-900 mb-8 border-b-2 border-indigo-200 pb-4">Manage Assignments</h2><button id="add-assignment-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg font-medium mb-6">Create New Assignment</button><div id="assignment-form-container" class="hidden bg-indigo-50 p-6 rounded-lg shadow-md mb-8"></div><div id="assignment-list" class="space-y-4"></div></div>`;
+            const list = section.querySelector('#assignment-list');
+            list.innerHTML = assignmentsCache.map(ass => `<div class="bg-gray-100 p-4 rounded-lg"><div class="flex justify-between items-start"><h3 class="font-bold text-lg">${ass.title}</h3><div><button class="edit-ass-btn text-blue-600 mr-2" data-id="${ass.id}"><i class="fas fa-edit"></i></button><button class="delete-ass-btn text-red-600" data-id="${ass.id}"><i class="fas fa-trash"></i></button></div></div><p class="text-sm">For: ${ass.assignedTo} | Due: ${ass.dueDate}</p></div>`).join('');
+            section.querySelector('#add-assignment-btn').addEventListener('click', () => showAssignmentForm());
+            section.querySelectorAll('.edit-ass-btn').forEach(b => b.addEventListener('click', e => showAssignmentForm(e.currentTarget.dataset.id)));
+            section.querySelectorAll('.delete-ass-btn').forEach(b => b.addEventListener('click', e => deleteAssignment(e.currentTarget.dataset.id)));
+        }
+        function showAssignmentForm(id=null){
+            const ass = id ? assignmentsCache.find(a=>a.id === id) : {};
+            const container = document.getElementById('assignment-form-container');
+            container.classList.remove('hidden');
+            const classOptions = classesCache.map(c => `<option value="${c.name}" ${ass.assignedTo === c.name ? 'selected' : ''}>${c.name}</option>`).join('');
+
+            container.innerHTML = `<h3 class="text-2xl font-bold text-indigo-800 mb-4">${id ? 'Edit' : 'New'} Assignment</h3><form id="assignment-form" class="space-y-4"><input type="hidden" id="ass-id" value="${id || ''}"><div><label>Title</label><input type="text" id="ass-title" class="w-full p-2 border rounded" value="${ass.title || ''}" required></div><div><label>Description</label><textarea id="ass-desc" class="w-full p-2 border rounded">${ass.description || ''}</textarea></div><div><label>Due Date</label><input type="date" id="ass-due" class="w-full p-2 border rounded" value="${ass.dueDate || new Date().toISOString().split('T')[0]}" required></div><div><label>Assign To (Class)</label><select id="ass-to" class="w-full p-2 border rounded" required>${classOptions}</select></div><div><label>Assigned By (Teacher)</label><input type="text" id="ass-by" class="w-full p-2 border rounded" value="${ass.teacher || ''}" required></div><div class="flex justify-end space-x-4"><button type="button" id="cancel-ass-form" class="bg-gray-300 p-2 rounded">Cancel</button><button type="submit" class="bg-indigo-600 text-white p-2 rounded">${id ? 'Update' : 'Create'}</button></div></form>`;
+            document.getElementById('cancel-ass-form').addEventListener('click', () => container.classList.add('hidden'));
+            document.getElementById('assignment-form').addEventListener('submit', saveAssignment);
+        }
+        async function saveAssignment(e){
+            e.preventDefault();
+            const id = document.getElementById('ass-id').value;
+            const data = { title: document.getElementById('ass-title').value, description: document.getElementById('ass-desc').value, dueDate: document.getElementById('ass-due').value, assignedTo: document.getElementById('ass-to').value, teacher: document.getElementById('ass-by').value };
+            if(id) { await updateDoc(doc(assignmentsCollection, id), data); } else { await addDoc(assignmentsCollection, { ...data, submissions: [] }); }
+            alert('Assignment saved!'); document.getElementById('assignment-form-container').classList.add('hidden');
+        }
+        async function deleteAssignment(id) { if(confirm('Delete this assignment?')) { await deleteDoc(doc(assignmentsCollection, id)); alert('Assignment deleted.'); }}
+
+    </script>
+</body>
+</html>
+

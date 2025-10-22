@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Grace Academy - Home</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .dot {
+            cursor: pointer;
+            height: 15px;
+            width: 15px;
+            margin: 0 5px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            display: inline-block;
+            transition: background-color 0.6s ease, transform 0.3s ease;
+        }
+        .active-dot, .dot:hover {
+            background-color: white;
+            transform: scale(1.2);
+        }
+        .carousel-slide {
+            display: none;
+            animation: fade 1.5s;
+        }
+        @keyframes fade {
+            from {opacity: .4}
+            to {opacity: 1}
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        .slide-text-enter {
+            animation: slide-in 1s ease-out forwards;
+            opacity: 0;
+        }
+        @keyframes slide-in {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800 bg-gray-50">
+
+    <header class="bg-gradient-to-r from-blue-700 to-blue-900 text-white shadow-lg sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <a href="index.html" class="flex items-center space-x-3">
+                    <img src="https://placehold.co/60x60/FFFFFF/3B82F6?text=GA" alt="The Grace Academy Logo" class="h-12 w-auto rounded-full">
+                    <span class="text-3xl font-bold tracking-tight">The Grace Academy</span>
+                </a>
+            </div>
+
+            <div class="hidden lg:flex space-x-8">
+                <a href="index.html" class="hover:text-blue-200 transition duration-300 ease-in-out text-lg font-medium">Home</a>
+                <a href="#about" class="hover:text-blue-200 transition duration-300 ease-in-out text-lg font-medium">About Us</a>
+                <a href="#courses" class="hover:text-blue-200 transition duration-300 ease-in-out text-lg font-medium">Courses</a>
+                <a href="blog.html" class="hover:text-blue-200 transition duration-300 ease-in-out text-lg font-medium">Blog</a>
+                <a href="#contact" class="hover:text-blue-200 transition duration-300 ease-in-out text-lg font-medium">Contact</a>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <a href="login.html" class="bg-white text-blue-800 px-6 py-2 rounded-full font-semibold shadow-md hover:bg-blue-100 transition duration-300 ease-in-out transform hover:scale-105">
+                    Login
+                </a>
+                <button id="mobile-menu-button" class="lg:hidden text-white focus:outline-none">
+                    <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </nav>
+
+        <div id="mobile-menu" class="hidden lg:hidden bg-blue-800">
+            <div class="flex flex-col items-center space-y-4 py-4">
+                <a href="index.html" class="block text-white text-lg hover:text-blue-200">Home</a>
+                <a href="#about" class="block text-white text-lg hover:text-blue-200">About Us</a>
+                <a href="#courses" class="block text-white text-lg hover:text-blue-200">Courses</a>
+                <a href="blog.html" class="block text-white text-lg hover:text-blue-200">Blog</a>
+                <a href="#contact" class="block text-white text-lg hover:text-blue-200">Contact</a>
+            </div>
+        </div>
+    </header>
+    
+    <section class="relative w-full h-[90vh] overflow-hidden bg-gray-800">
+        <!-- Slide 1: Modern Classroom -->
+        <div class="carousel-slide absolute w-full h-full bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop');">
+            <div class="absolute inset-0 bg-black opacity-60"></div>
+            <div class="relative z-10 h-full flex items-center justify-center text-center text-white p-6">
+                <div class="slide-text">
+                    <h1 class="text-5xl md:text-6xl font-extrabold leading-tight mb-6">Empowering Futures Through Quality Education</h1>
+                    <p class="text-xl md:text-2xl mb-8 font-light max-w-3xl mx-auto">The Grace Academy: Nurturing Minds and Building Leaders in Paigah Dera Ghazi Khan.</p>
+                    <div class="space-x-4">
+                        <a href="#courses" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg">Explore Courses</a>
+                        <a href="#contact" class="bg-transparent border-2 border-white hover:bg-white hover:text-blue-800 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg">Contact Us</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: Student Success -->
+        <div class="carousel-slide absolute w-full h-full bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop');">
+            <div class="absolute inset-0 bg-black opacity-60"></div>
+            <div class="relative z-10 h-full flex items-center justify-center text-center text-white p-6">
+                 <div class="slide-text">
+                    <h1 class="text-5xl md:text-6xl font-extrabold leading-tight mb-6">A Legacy of Academic Excellence</h1>
+                    <p class="text-xl md:text-2xl mb-8 font-light max-w-3xl mx-auto">Dedicated Faculty, Proven Results, and a Path to Success.</p>
+                    <div class="space-x-4">
+                        <a href="#about" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg">Learn More</a>
+                        <a href="login.html" class="bg-transparent border-2 border-white hover:bg-white hover:text-blue-800 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg">Student Login</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Teacher Interaction -->
+        <div class="carousel-slide absolute w-full h-full bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=2070&auto=format&fit=crop');">
+            <div class="absolute inset-0 bg-black opacity-60"></div>
+            <div class="relative z-10 h-full flex items-center justify-center text-center text-white p-6">
+                 <div class="slide-text">
+                    <h1 class="text-5xl md:text-6xl font-extrabold leading-tight mb-6">Innovation in Every Classroom</h1>
+                    <p class="text-xl md:text-2xl mb-8 font-light max-w-3xl mx-auto">Join a vibrant community of learners and innovators at Paigah Dera Ghazi Khan.</p>
+                    <div class="space-x-4">
+                        <a href="#contact" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg">Enroll Now</a>
+                        <a href="blog.html" class="bg-transparent border-2 border-white hover:bg-white hover:text-blue-800 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg">Read Our Blog</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Arrows -->
+        <button onclick="changeSlide(-1)" class="absolute left-0 top-1/2 transform -translate-y-1/2 p-4 text-white text-2xl font-bold cursor-pointer hover:bg-black hover:bg-opacity-50 transition duration-300 z-20">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button onclick="changeSlide(1)" class="absolute right-0 top-1/2 transform -translate-y-1/2 p-4 text-white text-2xl font-bold cursor-pointer hover:bg-black hover:bg-opacity-50 transition duration-300 z-20">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+
+        <!-- Dots -->
+        <div id="dots-container" class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+            <!-- Dots will be generated by JS -->
+        </div>
+    </section>
+    
+    <!-- About Us Section -->
+    <section id="about" class="py-20 bg-white">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-4xl font-bold text-blue-800 mb-8">About The Grace Academy</h2>
+            <p class="text-lg text-gray-700 leading-relaxed max-w-4xl mx-auto mb-12">
+                The Grace Academy is a beacon of educational excellence in Paigah Dera Ghazi Khan. Committed to fostering intellectual growth, critical thinking, and holistic development, we provide a nurturing environment where students thrive. Our dedicated faculty, innovative curriculum, and modern facilities ensure that every student receives the best possible education, preparing them for future success and responsible citizenship.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                <div class="p-8 bg-gray-100 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-2">
+                    <i class="fas fa-chalkboard-teacher text-5xl text-blue-600 mb-4"></i>
+                    <h3 class="text-2xl font-semibold text-blue-700 mb-3">Experienced Faculty</h3>
+                    <p class="text-gray-600">Our team of highly qualified educators brings years of experience and expertise to guide students towards academic excellence.</p>
+                </div>
+                <div class="p-8 bg-gray-100 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-2">
+                    <i class="fas fa-lightbulb text-5xl text-blue-600 mb-4"></i>
+                    <h3 class="text-2xl font-semibold text-blue-700 mb-3">Innovative Curriculum</h3>
+                    <p class="text-gray-600">We offer a dynamic curriculum that blends traditional values with modern teaching, encouraging creativity and problem-solving.</p>
+                </div>
+                <div class="p-8 bg-gray-100 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-2">
+                    <i class="fas fa-school text-5xl text-blue-600 mb-4"></i>
+                    <h3 class="text-2xl font-semibold text-blue-700 mb-3">Modern Facilities</h3>
+                    <p class="text-gray-600">Equipped with state-of-the-art classrooms and labs, our campus provides an optimal learning environment for all students.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Courses Section -->
+    <section id="courses" class="py-20 bg-blue-50">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-4xl font-bold text-blue-800 mb-8">Our Academic Programs</h2>
+            <p class="text-lg text-gray-700 leading-relaxed max-w-3xl mx-auto mb-12">
+                The Grace Academy offers a diverse range of programs designed to cater to various educational needs. From foundational learning to advanced studies, we provide comprehensive courses that challenge and inspire.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <img src="https://images.unsplash.com/photo-1576765974102-b68d441a134a?q=80&w=2070&auto=format&fit=crop" alt="Primary Education" class="w-full h-56 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-2xl font-semibold text-blue-700 mb-3">Primary Education</h3>
+                        <p class="text-gray-600 mb-4">Building strong foundations in literacy, numeracy, and essential life skills through engaging learning methods.</p>
+                        <a href="#" class="inline-block bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700 transition duration-300">Learn More</a>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <img src="https://images.unsplash.com/photo-1594434533439-05d8f28b15a6?q=80&w=2070&auto=format&fit=crop" alt="Secondary Education" class="w-full h-56 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-2xl font-semibold text-blue-700 mb-3">Secondary Education</h3>
+                        <p class="text-gray-600 mb-4">A comprehensive curriculum focusing on core subjects, critical thinking, and preparation for higher academic challenges.</p>
+                        <a href="#" class="inline-block bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700 transition duration-300">Learn More</a>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                    <img src="https://images.unsplash.com/photo-1580582932707-520aed937b7b?q=80&w=1932&auto=format&fit=crop" alt="Matriculation Preparation" class="w-full h-56 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-2xl font-semibold text-blue-700 mb-3">Matriculation Prep</h3>
+                        <p class="text-gray-600 mb-4">Specialized coaching and intensive review sessions to ensure students excel in their matriculation examinations.</p>
+                        <a href="#" class="inline-block bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700 transition duration-300">Learn More</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-bold text-blue-800 text-center mb-8">Get In Touch With Us</h2>
+            <p class="text-lg text-gray-700 text-center max-w-2xl mx-auto mb-12">
+                Have questions or need more information? Feel free to reach out to us. Our team is here to help you.
+            </p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+                <div class="bg-blue-50 p-8 rounded-lg shadow-lg">
+                    <h3 class="text-3xl font-bold text-blue-700 mb-6">Contact Information</h3>
+                    <div class="space-y-6 text-lg text-gray-700">
+                        <p class="flex items-center space-x-4"><i class="fas fa-map-marker-alt text-blue-600 text-2xl w-6"></i><span>Paigah Dera Ghazi Khan, Pakistan</span></p>
+                        <p class="flex items-center space-x-4"><i class="fas fa-phone-alt text-blue-600 text-2xl w-6"></i><a href="tel:03362268687" class="hover:underline">0336-2268687</a></p>
+                        <p class="flex items-center space-x-4"><i class="fas fa-envelope text-blue-600 text-2xl w-6"></i><a href="mailto:thegraceacademy786@gmail.com" class="hover:underline">thegraceacademy786@gmail.com</a></p>
+                        <p class="flex items-center space-x-4"><i class="fas fa-clock text-blue-600 text-2xl w-6"></i><span>Mon - Fri: 8:00 AM - 4:00 PM</span></p>
+                    </div>
+                    <div class="mt-8 rounded-lg overflow-hidden shadow-md">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d54553.71449679198!2d70.60424039999999!3d30.93238155!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3924a48b8b0255c3%3A0x86333798cd32b3c!2sDera%20Ghazi%20Khan%2C%20Punjab%2C%20Pakistan!5e0!3m2!1sen!2s!4v1678888888888!5m2!1sen!2s" width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                </div>
+                <div class="bg-gray-50 p-8 rounded-lg shadow-lg">
+                    <h3 class="text-3xl font-bold text-blue-700 mb-6">Send Us a Message</h3>
+                    <form action="#" method="POST" class="space-y-6">
+                        <div>
+                            <label for="name" class="block text-lg font-medium text-gray-700 mb-2">Your Name</label>
+                            <input type="text" id="name" name="name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-lg" placeholder="John Doe" required>
+                        </div>
+                        <div>
+                            <label for="email" class="block text-lg font-medium text-gray-700 mb-2">Your Email</label>
+                            <input type="email" id="email" name="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-lg" placeholder="john.doe@example.com" required>
+                        </div>
+                        <div>
+                            <label for="message" class="block text-lg font-medium text-gray-700 mb-2">Your Message</label>
+                            <textarea id="message" name="message" rows="6" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-lg" placeholder="Type your message here..." required></textarea>
+                        </div>
+                        <div class="text-right">
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-md">Send Message</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="container mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <h3 class="text-2xl font-bold mb-4 text-blue-400">The Grace Academy</h3>
+                <p class="text-gray-400 mb-4">Committed to nurturing young minds and empowering them for a brighter future.</p>
+                <div class="flex space-x-4 text-gray-400">
+                    <a href="#" class="hover:text-white transition-colors duration-300"><i class="fab fa-facebook-f text-xl"></i></a>
+                    <a href="#" class="hover:text-white transition-colors duration-300"><i class="fab fa-twitter text-xl"></i></a>
+                    <a href="#" class="hover:text-white transition-colors duration-300"><i class="fab fa-instagram text-xl"></i></a>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-2xl font-bold mb-4 text-blue-400">Quick Links</h3>
+                <ul class="space-y-3">
+                    <li><a href="index.html" class="text-gray-400 hover:text-white transition-colors duration-300">Home</a></li>
+                    <li><a href="#about" class="text-gray-400 hover:text-white transition-colors duration-300">About Us</a></li>
+                    <li><a href="#courses" class="text-gray-400 hover:text-white transition-colors duration-300">Our Programs</a></li>
+                    <li><a href="blog.html" class="text-gray-400 hover:text-white transition-colors duration-300">Blog</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-2xl font-bold mb-4 text-blue-400">Student Zone</h3>
+                <ul class="space-y-3">
+                    <li><a href="login.html" class="text-gray-400 hover:text-white transition-colors duration-300">Student Login</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-300">Admissions</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-300">Fee Structure</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-2xl font-bold mb-4 text-blue-400">Reach Us</h3>
+                <ul class="space-y-3 text-gray-400">
+                    <li class="flex items-start"><i class="fas fa-map-marker-alt mt-1 mr-3 text-blue-500"></i>Paigah Dera Ghazi Khan, Pakistan</li>
+                    <li class="flex items-start"><i class="fas fa-phone-alt mt-1 mr-3 text-blue-500"></i>0336-2268687</li>
+                    <li class="flex items-start"><i class="fas fa-envelope mt-1 mr-3 text-blue-500"></i>thegraceacademy786@gmail.com</li>
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-gray-700 mt-10 pt-8 text-center text-gray-500 text-sm">
+            &copy; <span id="current-year"></span> The Grace Academy. All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+
+        // --- Simplified & Robust Carousel Functionality ---
+        let slideIndex = 0;
+        let slideInterval;
+        const slides = document.querySelectorAll(".carousel-slide");
+        const dotsContainer = document.getElementById("dots-container");
+        const slideChangeInterval = 5000; // 5 seconds
+
+        function showSlide(index) {
+            // Boundary checks
+            if (index >= slides.length) {
+                slideIndex = 0;
+            } else if (index < 0) {
+                slideIndex = slides.length - 1;
+            } else {
+                slideIndex = index;
+            }
+
+            // Hide all slides and deactivate all dots
+            slides.forEach(slide => slide.style.display = "none");
+            const dots = dotsContainer.children;
+            for(let i = 0; i < dots.length; i++) {
+                dots[i].classList.remove('active-dot');
+            }
+            
+            // Show the target slide and activate its dot
+            const currentSlideElement = slides[slideIndex];
+            currentSlideElement.style.display = "block";
+            dots[slideIndex].classList.add('active-dot');
+
+            // Re-apply animation to text content
+            const textContent = currentSlideElement.querySelector('.slide-text');
+            if (textContent) {
+                textContent.classList.remove('slide-text-enter');
+                void textContent.offsetWidth; // Trigger reflow to restart animation
+                textContent.classList.add('slide-text-enter');
+            }
+        }
+        
+        // Go to next/previous slide
+        window.changeSlide = function(n) {
+            resetTimer();
+            showSlide(slideIndex + n);
+        }
+
+        // Go to a specific slide (for dots)
+        window.currentSlide = function(n) {
+            resetTimer();
+            showSlide(n);
+        }
+
+        // Reset the automatic slide change timer
+        function resetTimer() {
+            clearInterval(slideInterval);
+            slideInterval = setInterval(() => changeSlide(1), slideChangeInterval);
+        }
+
+        // --- Initial Setup ---
+        document.addEventListener("DOMContentLoaded", function() {
+            if (slides.length > 0) {
+                // Create dots dynamically
+                for (let i = 0; i < slides.length; i++) {
+                    const dot = document.createElement("span");
+                    dot.className = "dot";
+                    dot.setAttribute("onclick", `currentSlide(${i})`);
+                    dotsContainer.appendChild(dot);
+                }
+                
+                // Show the first slide and start the timer
+                showSlide(slideIndex);
+                resetTimer();
+            }
+
+            // Set current year in footer
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+        });
+    </script>
+</body>
+</html>
+

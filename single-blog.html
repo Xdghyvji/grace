@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Post - The Grace Academy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .recent-post-item, .featured-post-item { transition: transform 0.2s ease-in-out; }
+        .recent-post-item:hover, .featured-post-item:hover { transform: translateX(5px); }
+        .prose h3 { margin-top: 1.5em; margin-bottom: 0.5em; }
+        .prose p { margin-bottom: 1em; }
+        .prose blockquote { margin-top: 1.5em; margin-bottom: 1.5em; }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800 bg-gray-50 flex flex-col min-h-screen">
+    <header class="bg-white shadow-md">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <img src="https://placehold.co/50x50/800080/FFFFFF?text=GA" alt="Academy Logo" class="h-10 w-auto">
+                <a href="index.html" class="text-2xl font-bold text-purple-900 hover:text-purple-700">The Grace Academy</a>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="index.html" class="text-gray-700 hover:text-purple-700 text-lg font-medium">Home</a>
+                <a href="blog.html" class="text-purple-700 border-b-2 border-purple-700 text-lg font-medium">Blog</a>
+                <a href="index.html#contact" class="text-gray-700 hover:text-purple-700 text-lg font-medium">Contact</a>
+                <a href="login.html" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg font-medium transition duration-300">Login</a>
+            </div>
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-gray-800 hover:text-purple-700 focus:outline-none">
+                    <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden bg-white shadow-lg py-2">
+            <a href="index.html" class="block px-6 py-2 text-gray-700 hover:bg-gray-100">Home</a>
+            <a href="blog.html" class="block px-6 py-2 text-purple-700 bg-purple-50">Blog</a>
+            <a href="index.html#contact" class="block px-6 py-2 text-gray-700 hover:bg-gray-100">Contact</a>
+            <a href="login.html" class="block px-6 py-2 text-purple-600 hover:bg-purple-50">Login</a>
+        </div>
+    </header>
+
+    <main class="flex-1 container mx-auto px-6 py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div id="main-content" class="lg:col-span-2 bg-white p-8 rounded-lg shadow-xl">
+                 <p class="text-center text-gray-500">Loading post...</p>
+            </div>
+            <aside id="sidebar-content" class="space-y-10">
+                 <p class="text-center text-gray-500">Loading sidebar...</p>
+            </aside>
+        </div>
+    </main>
+    
+    <footer class="bg-gray-800 text-white py-10 mt-12">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; <span id="current-year"></span> The Grace Academy. All rights reserved.</p>
+            <div class="flex justify-center space-x-6 mt-4">
+                <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, onSnapshot, query, orderBy, getDocs, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // IMPORTANT: These variables are provided by the environment and MUST be used.
+        const firebaseConfig = {
+  apiKey: "AIzaSyA65vwfeuvsxnVSmlTof1_khaPmNtiMMv0",
+  authDomain: "non-ruled.firebaseapp.com",
+  projectId: "non-ruled",
+  storageBucket: "non-ruled.firebasestorage.app",
+  messagingSenderId: "981177762303",
+  appId: "1:981177762303:web:7db5c95c3b264444e267ca",
+  measurementId: "G-E3TY5JLVT5"
+};
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        async function renderBlogPost() {
+            const postId = getUrlParameter('id');
+            const mainContent = document.getElementById('main-content');
+
+            if (!postId) {
+                mainContent.innerHTML = '<h1 class="text-3xl font-bold text-red-500">Error: No blog post ID provided.</h1>';
+                return;
+            }
+            
+            // CORRECTED FIRESTORE PATH: Using the consistent path structure
+            const postRef = doc(db, `artifacts/${appId}/public/data/blogPosts`, postId);
+            const postSnap = await getDoc(postRef);
+
+            if (!postSnap.exists()) {
+                 mainContent.innerHTML = '<h1 class="text-3xl font-bold text-red-500">Error: Blog post not found.</h1>';
+                 return;
+            }
+            const post = postSnap.data();
+            document.title = `${post.title} - The Grace Academy`;
+
+            // Render Main Content
+            mainContent.innerHTML = `
+                <img id="blog-post-image" src="${post.imageUrl || 'https://placehold.co/1200x600/800080/FFFFFF?text=Blog+Post'}" alt="${post.title}" class="w-full h-96 object-cover rounded-lg mb-8 shadow-md">
+                <span id="blog-post-category" class="inline-block bg-purple-100 text-purple-800 text-sm px-4 py-2 rounded-full font-semibold mb-4">${post.category || 'General'}</span>
+                <h1 id="blog-post-title" class="text-4xl font-extrabold text-gray-900 mb-6 leading-tight">${post.title}</h1>
+                <div class="flex items-center text-gray-600 text-sm mb-6 space-x-4">
+                    <span><i class="fas fa-user mr-1"></i>${post.author}</span>
+                    <span><i class="fas fa-calendar-alt mr-1"></i>${new Date(post.date).toLocaleDateString()}</span>
+                </div>
+                <div id="blog-post-content" class="prose max-w-none text-gray-700 leading-relaxed text-lg mb-8">${post.content}</div>
+                <div class="border-t border-gray-200 pt-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-3xl font-bold text-gray-900">Comments (<span id="comments-count">0</span>)</h3>
+                    </div>
+                    <div id="comments-list" class="space-y-6 mb-8"></div>
+                    <div class="border-t border-gray-200 pt-8 mt-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-5">Leave a Comment</h3>
+                        <form id="comment-form" class="space-y-4">
+                            <div>
+                                <label for="comment-name" class="block text-sm font-medium text-gray-700">Name</label>
+                                <input type="text" id="comment-name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 p-3" required>
+                            </div>
+                            <div>
+                                <label for="comment-email" class="block text-sm font-medium text-gray-700">Email (not displayed)</label>
+                                <input type="email" id="comment-email" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 p-3" required>
+                            </div>
+                            <div>
+                                <label for="comment-content" class="block text-sm font-medium text-gray-700">Comment</label>
+                                <textarea id="comment-content" rows="6" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 p-3" required></textarea>
+                            </div>
+                            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-lg font-semibold transition duration-300">Post Comment</button>
+                            <p id="comment-status" class="mt-2 text-sm text-gray-600"></p>
+                        </form>
+                    </div>
+                </div>
+            `;
+
+            renderSidebar(postId);
+            
+            // Real-time comments listener
+            const commentsQuery = query(collection(db, `artifacts/${appId}/public/data/blogPosts/${postId}/comments`), orderBy('date', 'asc'));
+            onSnapshot(commentsQuery, (snapshot) => {
+                const comments = snapshot.docs.map(doc => doc.data());
+                renderComments(comments);
+            });
+            
+            // Handle comment form submission
+            const commentForm = document.getElementById('comment-form');
+            commentForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const commentStatus = document.getElementById('comment-status');
+                const newComment = {
+                    name: document.getElementById('comment-name').value,
+                    email: document.getElementById('comment-email').value,
+                    content: document.getElementById('comment-content').value,
+                    date: serverTimestamp() // Use server timestamp for consistency
+                };
+                
+                try {
+                    await addDoc(collection(db, `artifacts/${appId}/public/data/blogPosts/${postId}/comments`), newComment);
+                    commentForm.reset();
+                    commentStatus.textContent = 'Comment posted successfully! It will appear shortly.';
+                    commentStatus.className = 'mt-2 text-sm text-green-600';
+                } catch (error) {
+                    console.error("Error adding comment: ", error);
+                    commentStatus.textContent = 'Failed to post comment. Please try again.';
+                    commentStatus.className = 'mt-2 text-sm text-red-600';
+                }
+            });
+        }
+
+        function renderComments(comments) {
+            const commentsList = document.getElementById('comments-list');
+            const commentsCount = document.getElementById('comments-count');
+            commentsList.innerHTML = '';
+            commentsCount.textContent = comments.length;
+
+            if (comments.length === 0) {
+                commentsList.innerHTML = '<p class="text-gray-500 italic">No comments yet. Be the first to comment!</p>';
+                return;
+            }
+
+            comments.forEach(comment => {
+                const commentElement = document.createElement('div');
+                commentElement.className = 'bg-gray-50 p-4 rounded-lg border border-gray-200';
+                const commentDate = comment.date ? comment.date.toDate() : new Date(); // Handle Firestore timestamp
+                commentElement.innerHTML = `
+                    <div class="flex items-center mb-2">
+                        <img src="https://placehold.co/40x40/800080/FFFFFF?text=${comment.name.charAt(0)}" alt="${comment.name}" class="w-10 h-10 rounded-full object-cover mr-3">
+                        <div>
+                            <p class="font-semibold text-gray-900">${comment.name}</p>
+                            <p class="text-xs text-gray-500">${commentDate.toLocaleDateString()} at ${commentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-700 pl-12">${comment.content.replace(/\n/g, '<br>')}</p>
+                `;
+                commentsList.appendChild(commentElement);
+            });
+        }
+        
+        async function renderSidebar(currentPostId) {
+            const sidebarContent = document.getElementById('sidebar-content');
+            
+            // Fetch all posts for sidebar data aggregation
+            const postsSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/public/data/blogPosts`), orderBy('date', 'desc')));
+            const allPosts = postsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+
+            // Recent Posts
+            const recentPosts = allPosts.filter(p => p.id !== currentPostId).slice(0, 5);
+            let recentPostsHtml = recentPosts.map(post => `
+                <li class="border-b border-gray-100 pb-3 mb-3 last:border-b-0 last:pb-0 last:mb-0 recent-post-item">
+                    <a href="single-blog.html?id=${post.id}" class="flex space-x-3 items-start group">
+                        <img src="${post.imageUrl || 'https://placehold.co/100x100'}" alt="${post.title}" class="w-16 h-16 object-cover rounded-md flex-shrink-0">
+                        <div>
+                            <p class="text-gray-800 font-medium group-hover:text-purple-700 leading-tight">${post.title}</p>
+                            <p class="text-gray-500 text-sm mt-1">${new Date(post.date).toLocaleDateString()}</p>
+                        </div>
+                    </a>
+                </li>
+            `).join('');
+
+            // Categories
+            const categories = [...new Set(allPosts.map(post => post.category).filter(Boolean))];
+            let categoriesHtml = categories.map(cat => `<a href="#" class="inline-block bg-purple-100 text-purple-800 text-sm px-3 py-1 rounded-full font-semibold hover:bg-purple-200 transition duration-200">${cat}</a>`).join('');
+            
+            sidebarContent.innerHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4 border-b pb-3 border-gray-200">Recent Posts</h3>
+                    <ul id="recent-posts-list" class="space-y-4">${recentPostsHtml || '<li>No other posts.</li>'}</ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4 border-b pb-3 border-gray-200">Categories</h3>
+                    <div id="categories-list" class="flex flex-wrap gap-3">${categoriesHtml || '<p>No categories.</p>'}</div>
+                </div>
+            `;
+        }
+
+        document.addEventListener('DOMContentLoaded', renderBlogPost);
+
+        document.getElementById('mobile-menu-button')?.addEventListener('click', () => {
+            document.getElementById('mobile-menu')?.classList.toggle('hidden');
+        });
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
