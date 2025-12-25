@@ -44,7 +44,7 @@
             <div>
                 <img class="mx-auto h-20 w-auto" src="download (2).png" alt="The Grace Academy">
                 <h2 class="mt-6 text-center text-4xl font-extrabold text-blue-900">Sign in</h2>
-                <p class="mt-2 text-center text-sm text-gray-600">Access your student, teacher, or admin portal</p>
+                <p class="mt-2 text-center text-sm text-gray-600">Access your portal (Student, Teacher, Attender, Admin)</p>
             </div>
             <form class="mt-8 space-y-6" id="loginForm">
                 <div class="rounded-md shadow-sm -space-y-px">
@@ -105,14 +105,12 @@
         const signinButton = document.getElementById('signin-button');
         const loginMessage = document.getElementById('loginMessage');
 
-        // Admin recovery email - if this email logs in, we force create admin data
         const RECOVERY_ADMIN_EMAIL = "admin@grace.com";
 
         let isProcessing = false;
 
         onAuthStateChanged(auth, async (user) => {
             if (user && !isProcessing) {
-                // If the page loads and user is already logged in, verify them
                 isProcessing = true;
                 signinButton.classList.add('btn-loading');
                 await checkUserRoleAndRedirect(user);
@@ -132,12 +130,8 @@
             isProcessing = true;
 
             try {
-                // Force logout first to clear any stale states
                 if (auth.currentUser) await signOut(auth);
-                
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                // logic continues in onAuthStateChanged or we can call it here manually
-                // onAuthStateChanged will trigger automatically, so we wait.
+                await signInWithEmailAndPassword(auth, email, password);
             } catch (error) {
                 console.error("Login Failed:", error);
                 handleLoginError(error);
@@ -156,8 +150,7 @@
             try {
                 let userDoc = await getDoc(userDocRef);
 
-                // --- AUTO-FIX FOR ADMIN ---
-                // If specific admin email tries to login but has no database entry, create it.
+                // Auto-provision admin if needed
                 if (user.email.toLowerCase() === RECOVERY_ADMIN_EMAIL.toLowerCase()) {
                     if (!userDoc.exists() || userDoc.data().role !== 'admin') {
                         console.log("Recovery Admin detected. Provisioning database...");
@@ -168,11 +161,9 @@
                             createdAt: serverTimestamp(),
                             profileImageUrl: 'https://placehold.co/40x40/FF0000/FFFFFF?text=A'
                         }, { merge: true });
-                        // Refresh doc
                         userDoc = await getDoc(userDocRef);
                     }
                 }
-                // --------------------------
 
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
@@ -185,12 +176,12 @@
                         if (userRole === 'admin') window.location.href = 'admin.html';
                         else if (userRole === 'teacher') window.location.href = 'teacher.html';
                         else if (userRole === 'student') window.location.href = 'student.html';
+                        else if (userRole === 'attender') window.location.href = 'attender.html';
                         else {
                             throw new Error('Role undefined');
                         }
                     }, 1000);
                 } else {
-                    // Valid auth, but no DB entry (and not the recovery admin)
                     throw new Error('User profile missing');
                 }
             } catch (error) {
@@ -200,7 +191,6 @@
                     : 'Error verifying user role. Please try again.';
                 loginMessage.className = 'mt-4 text-center text-sm font-medium text-red-600';
                 
-                // Sign out so they don't get stuck in a "logged in but invalid" state
                 await signOut(auth);
                 signinButton.classList.remove('btn-loading');
                 signinButton.disabled = false;
@@ -216,8 +206,6 @@
                 msg = 'Please enter a valid email address.';
             } else if (error.code === 'auth/too-many-requests') {
                 msg = 'Too many failed attempts. Please try again later.';
-            } else if (error.code === 'auth/network-request-failed') {
-                msg = 'Network error. Please check your connection.';
             }
             loginMessage.textContent = msg;
             loginMessage.className = 'mt-4 text-center text-sm font-medium text-red-600';
