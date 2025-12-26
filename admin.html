@@ -34,6 +34,15 @@
             color: white;
             border-left: 4px solid #3b82f6;
         }
+
+        /* Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #68D391;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #68D391;
+        }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-slate-800">
@@ -48,35 +57,35 @@
         </div>
         
         <nav class="flex-1 py-6 space-y-1">
-            <button onclick="showSection('dashboard')" class="sidebar-link active w-full flex items-center space-x-3 px-6 py-3.5">
+            <button onclick="showSection('dashboard')" class="sidebar-link active w-full flex items-center space-x-3 px-6 py-3.5" id="nav-dashboard">
                 <i class="fas fa-chart-pie w-5"></i>
                 <span class="font-medium">Overview</span>
             </button>
             
             <div class="px-6 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider mt-4">People</div>
-            <button onclick="showSection('students')" class="sidebar-link w-full flex items-center space-x-3 px-6 py-3.5">
+            <button onclick="showSection('students')" class="sidebar-link w-full flex items-center space-x-3 px-6 py-3.5" id="nav-students">
                 <i class="fas fa-user-graduate w-5"></i>
                 <span class="font-medium">Students</span>
             </button>
-            <button onclick="showSection('teachers')" class="sidebar-link w-full flex items-center space-x-3 px-6 py-3.5">
+            <button onclick="showSection('teachers')" class="sidebar-link w-full flex items-center space-x-3 px-6 py-3.5" id="nav-teachers">
                 <i class="fas fa-chalkboard-teacher w-5"></i>
                 <span class="font-medium">Teachers</span>
             </button>
-            <button onclick="showSection('staff')" class="sidebar-link w-full flex items-center space-x-3 px-6 py-3.5">
+            <button onclick="showSection('staff')" class="sidebar-link w-full flex items-center space-x-3 px-6 py-3.5" id="nav-staff">
                 <i class="fas fa-user-shield w-5"></i>
                 <span class="font-medium">Staff / Attenders</span>
             </button>
 
             <div class="px-6 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider mt-4">Finance</div>
-            <button onclick="showSection('finance')" class="sidebar-link w-full flex items-center space-x-3 px-6 py-3.5">
+            <button onclick="showSection('finance')" class="sidebar-link w-full flex items-center space-x-3 px-6 py-3.5" id="nav-finance">
                 <i class="fas fa-coins w-5"></i>
                 <span class="font-medium">Transactions & Fees</span>
             </button>
             
             <div class="px-6 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider mt-4">System</div>
-            <button onclick="showSection('settings')" class="sidebar-link w-full flex items-center space-x-3 px-6 py-3.5">
+            <button onclick="showSection('settings')" class="sidebar-link w-full flex items-center space-x-3 px-6 py-3.5" id="nav-settings">
                 <i class="fas fa-cogs w-5"></i>
-                <span class="font-medium">Settings</span>
+                <span class="font-medium">Payment Settings</span>
             </button>
         </nav>
 
@@ -162,26 +171,36 @@
                     </div>
                 </div>
 
-                <!-- Recent Activity / Quick Actions -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="glass-panel rounded-xl overflow-hidden">
-                        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                            <h3 class="font-bold text-slate-800">Quick Actions</h3>
-                        </div>
-                        <div class="p-6 grid grid-cols-2 gap-4">
-                            <button onclick="openModal('modal-add-student')" class="p-4 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition text-center group">
-                                <div class="bg-blue-100 text-blue-600 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition">
-                                    <i class="fas fa-plus"></i>
-                                </div>
-                                <span class="font-medium text-slate-700">Add Student</span>
-                            </button>
-                            <button onclick="showSection('finance')" class="p-4 border border-slate-200 rounded-xl hover:bg-green-50 hover:border-green-200 transition text-center group">
-                                <div class="bg-green-100 text-green-600 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition">
-                                    <i class="fas fa-file-invoice-dollar"></i>
-                                </div>
-                                <span class="font-medium text-slate-700">Generate Challan</span>
-                            </button>
-                        </div>
+                <!-- Quick Actions -->
+                <div class="glass-panel rounded-xl overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800">Quick Actions</h3>
+                    </div>
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <button onclick="openModal('modal-add-student')" class="p-4 border border-slate-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition text-center group">
+                            <div class="bg-blue-100 text-blue-600 h-10 w-10 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <span class="font-medium text-slate-700">Add Student</span>
+                        </button>
+                        <button onclick="openModal('modal-add-teacher')" class="p-4 border border-slate-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-200 transition text-center group">
+                            <div class="bg-indigo-100 text-indigo-600 h-10 w-10 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                            </div>
+                            <span class="font-medium text-slate-700">Add Teacher</span>
+                        </button>
+                         <button onclick="openModal('modal-add-attender')" class="p-4 border border-slate-200 rounded-xl hover:bg-purple-50 hover:border-purple-200 transition text-center group">
+                            <div class="bg-purple-100 text-purple-600 h-10 w-10 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                            <span class="font-medium text-slate-700">Add Attender</span>
+                        </button>
+                        <button onclick="showSection('finance')" class="p-4 border border-slate-200 rounded-xl hover:bg-green-50 hover:border-green-200 transition text-center group">
+                            <div class="bg-green-100 text-green-600 h-10 w-10 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                            </div>
+                            <span class="font-medium text-slate-700">Fees & Challans</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -223,9 +242,18 @@
                         <i class="fas fa-plus mr-2"></i> Add Teacher
                     </button>
                 </div>
-                <div class="glass-panel rounded-xl overflow-hidden p-6 text-center text-slate-500">
-                    <i class="fas fa-tools text-4xl mb-4 text-slate-300"></i>
-                    <p>Teacher list functionality is similar to students. Implemented "Add Teacher" for demonstration.</p>
+                <div class="glass-panel rounded-xl overflow-hidden">
+                    <table class="w-full text-left text-sm text-slate-600">
+                         <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500">
+                            <tr>
+                                <th class="px-6 py-4">Name</th>
+                                <th class="px-6 py-4">Subject</th>
+                                <th class="px-6 py-4">Email</th>
+                                <th class="px-6 py-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teacher-list-body" class="divide-y divide-slate-200"></tbody>
+                    </table>
                 </div>
             </div>
             
@@ -237,8 +265,18 @@
                         <i class="fas fa-plus mr-2"></i> Add Attender
                     </button>
                 </div>
-                <div class="glass-panel rounded-xl overflow-hidden p-6 text-center text-slate-500">
-                    <p>Manage non-teaching staff here.</p>
+                <div class="glass-panel rounded-xl overflow-hidden">
+                     <table class="w-full text-left text-sm text-slate-600">
+                         <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500">
+                            <tr>
+                                <th class="px-6 py-4">Name</th>
+                                <th class="px-6 py-4">Role</th>
+                                <th class="px-6 py-4">Email</th>
+                                <th class="px-6 py-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staff-list-body" class="divide-y divide-slate-200"></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -274,34 +312,91 @@
                 </div>
             </div>
 
-            <!-- SECTION: SETTINGS -->
+            <!-- SECTION: SETTINGS (PAYMENT METHODS) -->
             <div id="settings" class="content-section hidden fade-in">
-                <h2 class="text-2xl font-bold text-slate-800 mb-6">Institute Settings</h2>
-                <div class="glass-panel rounded-xl p-6 max-w-2xl">
-                    <h3 class="font-bold text-lg mb-4">Payment Methods</h3>
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
-                            <div class="flex items-center">
-                                <i class="fab fa-cc-visa text-2xl text-blue-800 mr-3"></i>
-                                <span class="font-medium">Credit/Debit Card</span>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-800">Payment Methods Configuration</h2>
+                    <button onclick="savePaymentSettings()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-md transition font-medium">
+                        <i class="fas fa-save mr-2"></i> Save Changes
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Easypaisa -->
+                    <div class="glass-panel rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Easypaisa_logo.png" class="h-8 w-auto opacity-80" alt="Easypaisa" onerror="this.src='https://placehold.co/40x40?text=EP'">
+                                <h3 class="font-bold text-lg text-slate-800">Easypaisa</h3>
                             </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" checked class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
+                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" name="toggle" id="toggle-ep" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                                <label for="toggle-ep" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                            </div>
                         </div>
-                        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
-                            <div class="flex items-center">
-                                <i class="fas fa-university text-2xl text-slate-600 mr-3"></i>
-                                <span class="font-medium">Bank Transfer</span>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Account Title</label>
+                                <input type="text" id="ep-title" class="w-full border-slate-300 rounded-lg border p-2 text-sm">
                             </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Account Number</label>
+                                <input type="text" id="ep-number" class="w-full border-slate-300 rounded-lg border p-2 text-sm">
+                            </div>
                         </div>
                     </div>
-                    <button class="mt-6 bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-900 transition">Save Settings</button>
+
+                    <!-- JazzCash -->
+                    <div class="glass-panel rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d4/JazzCash_logo.png" class="h-8 w-auto opacity-80" alt="JazzCash" onerror="this.src='https://placehold.co/40x40?text=JC'">
+                                <h3 class="font-bold text-lg text-slate-800">JazzCash</h3>
+                            </div>
+                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" name="toggle" id="toggle-jc" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                                <label for="toggle-jc" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Account Title</label>
+                                <input type="text" id="jc-title" class="w-full border-slate-300 rounded-lg border p-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Account Number</label>
+                                <input type="text" id="jc-number" class="w-full border-slate-300 rounded-lg border p-2 text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bank Transfer -->
+                    <div class="glass-panel rounded-xl p-6 lg:col-span-2">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-university text-slate-600 text-2xl"></i>
+                                <h3 class="font-bold text-lg text-slate-800">Bank Transfer</h3>
+                            </div>
+                            <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" name="toggle" id="toggle-bank" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                                <label for="toggle-bank" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Bank Name</label>
+                                <input type="text" id="bank-name" class="w-full border-slate-300 rounded-lg border p-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Account Title</label>
+                                <input type="text" id="bank-title" class="w-full border-slate-300 rounded-lg border p-2 text-sm">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">IBAN / Account Number</label>
+                                <input type="text" id="bank-iban" class="w-full border-slate-300 rounded-lg border p-2 text-sm">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -310,47 +405,61 @@
 
     <!-- MODAL: ADD STUDENT -->
     <div id="modal-add-student" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden transform transition-all">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
             <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
                 <h3 class="font-bold text-white text-lg">Add New Student</h3>
                 <button onclick="closeModal('modal-add-student')" class="text-white hover:text-blue-200"><i class="fas fa-times text-xl"></i></button>
             </div>
             <form id="form-add-student" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Credentials -->
+                <div class="md:col-span-2 border-b border-gray-200 pb-2 mb-2">
+                    <p class="text-xs font-bold text-gray-400 uppercase">Login Credentials</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Email (Login ID)</label>
+                    <input type="email" name="email" required placeholder="student@grace.com" class="w-full border-slate-300 rounded-lg border p-2.5">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                    <input type="password" name="password" required placeholder="******" class="w-full border-slate-300 rounded-lg border p-2.5">
+                </div>
+
+                <!-- Profile -->
+                <div class="md:col-span-2 border-b border-gray-200 pb-2 mb-2 mt-2">
+                    <p class="text-xs font-bold text-gray-400 uppercase">Student Profile</p>
+                </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
-                    <input type="text" name="name" required class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 border p-2.5">
+                    <input type="text" name="name" required class="w-full border-slate-300 rounded-lg border p-2.5">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Father's Name</label>
-                    <input type="text" name="fatherName" required class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 border p-2.5">
+                    <input type="text" name="fatherName" required class="w-full border-slate-300 rounded-lg border p-2.5">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Roll Number</label>
-                    <input type="text" name="rollNo" required class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 border p-2.5">
+                    <input type="text" name="rollNo" required class="w-full border-slate-300 rounded-lg border p-2.5">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Class</label>
-                    <select name="class" class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 border p-2.5">
+                    <select name="class" class="w-full border-slate-300 rounded-lg border p-2.5">
                         <option value="10th">10th Grade</option>
                         <option value="9th">9th Grade</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Section</label>
-                    <select name="section" class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 border p-2.5">
+                    <select name="section" class="w-full border-slate-300 rounded-lg border p-2.5">
                         <option value="A">Section A</option>
                         <option value="B">Section B</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Initial Fee Due (PKR)</label>
-                    <input type="number" name="feeDue" value="0" class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 border p-2.5">
-                </div>
-                <div class="md:col-span-2 bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-sm text-yellow-800">
-                    <i class="fas fa-info-circle mr-1"></i> <strong>Note:</strong> This creates the student profile in the database.
+                    <input type="number" name="feeDue" value="0" class="w-full border-slate-300 rounded-lg border p-2.5">
                 </div>
                 <div class="md:col-span-2 flex justify-end">
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-md">Create Student Profile</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-md">Create Account</button>
                 </div>
             </form>
         </div>
@@ -364,19 +473,23 @@
                 <button onclick="closeModal('modal-add-teacher')" class="text-white hover:text-indigo-200"><i class="fas fa-times text-xl"></i></button>
             </div>
             <form id="form-add-teacher" class="p-6 space-y-4">
-                <div>
+                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Teacher Name</label>
                     <input type="text" name="name" required class="w-full border p-2.5 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Email (Login ID)</label>
+                    <input type="email" name="email" required class="w-full border p-2.5 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                    <input type="password" name="password" required class="w-full border p-2.5 rounded-lg">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Subject Specialty</label>
                     <input type="text" name="subject" required class="w-full border p-2.5 rounded-lg">
                 </div>
-                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Email (ID)</label>
-                    <input type="email" name="email" required class="w-full border p-2.5 rounded-lg">
-                </div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium">Add Teacher</button>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium">Create Teacher Account</button>
             </form>
         </div>
     </div>
@@ -394,10 +507,80 @@
                     <input type="text" name="name" required class="w-full border p-2.5 rounded-lg">
                 </div>
                  <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Email (ID)</label>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Email (Login ID)</label>
                     <input type="email" name="email" required class="w-full border p-2.5 rounded-lg">
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium">Add Attender</button>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                    <input type="password" name="password" required class="w-full border p-2.5 rounded-lg">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium">Create Staff Account</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- MODAL: EDIT STUDENT -->
+    <div id="modal-edit-student" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+            <div class="bg-slate-700 px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-white text-lg">Edit Student Profile</h3>
+                <button onclick="closeModal('modal-edit-student')" class="text-white hover:text-slate-300"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <form id="form-edit-student" class="p-6 space-y-4">
+                <input type="hidden" name="id">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                    <input type="text" name="name" required class="w-full border p-2.5 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Father's Name</label>
+                    <input type="text" name="fatherName" required class="w-full border p-2.5 rounded-lg">
+                </div>
+                 <div class="grid grid-cols-2 gap-4">
+                     <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Class</label>
+                        <select name="class" class="w-full border p-2.5 rounded-lg">
+                            <option value="10th">10th</option>
+                            <option value="9th">9th</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Section</label>
+                        <select name="section" class="w-full border p-2.5 rounded-lg">
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-2 flex justify-end space-x-3">
+                     <button type="button" onclick="deleteUser('students', this.form.id.value)" class="bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200"><i class="fas fa-trash"></i> Delete</button>
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Update Profile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+     <!-- MODAL: EDIT TEACHER -->
+    <div id="modal-edit-teacher" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+             <div class="bg-slate-700 px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-white text-lg">Edit Teacher Profile</h3>
+                <button onclick="closeModal('modal-edit-teacher')" class="text-white hover:text-slate-300"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <form id="form-edit-teacher" class="p-6 space-y-4">
+                <input type="hidden" name="id">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                    <input type="text" name="name" required class="w-full border p-2.5 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Subject</label>
+                    <input type="text" name="subject" required class="w-full border p-2.5 rounded-lg">
+                </div>
+                <div class="pt-2 flex justify-end space-x-3">
+                     <button type="button" onclick="deleteUser('teachers', this.form.id.value)" class="bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200"><i class="fas fa-trash"></i> Delete</button>
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Update Profile</button>
+                </div>
             </form>
         </div>
     </div>
@@ -447,17 +630,35 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        
+        // --- SECONDARY APP FOR USER CREATION (Prevents Admin Logout) ---
+        let secondaryApp = null;
+        try {
+            secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
+        } catch(e) {
+            secondaryApp = firebase.app("Secondary"); // If already exists
+        }
+        const secondaryAuth = secondaryApp.auth();
+
+        // --- STRICT APP ID FOR PATHS ---
+        const appId = "sultania-academy-v1";
+
+        // --- HELPER FOR STRICT PATHS ---
+        function getCollection(collectionName) {
+            return db.collection('artifacts').doc(appId).collection('public').doc('data').collection(collectionName);
+        }
 
         // --- GLOBAL STATE ---
         let studentsCache = [];
+        let teachersCache = [];
+        let staffCache = [];
 
         // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
             const session = JSON.parse(localStorage.getItem('grace_user_session'));
 
             // Strict Admin Check
-            if (!session || !session.isLoggedIn || session.role !== 'admin' || session.email !== 'admin@grace.com') {
-                // Double check auth state just in case
+            if (!session || !session.isLoggedIn || session.role !== 'admin') {
                 auth.onAuthStateChanged(user => {
                     if(!user || user.email !== 'admin@grace.com') {
                         window.location.href = 'login.html';
@@ -473,16 +674,18 @@
         function initAdmin() {
             loadDashboardStats();
             loadStudentList();
+            loadTeacherList();
+            loadStaffList();
+            loadPaymentSettings();
         }
 
-        // --- STATS & OVERVIEW ---
+        // --- DATA LOADERS ---
         async function loadDashboardStats() {
             try {
-                // Students Count
-                const stdSnap = await db.collection('students').get();
-                studentsCache = []; // Reset cache
+                // Students
+                const stdSnap = await getCollection('students').get();
+                studentsCache = [];
                 let totalFeeDue = 0;
-                let estimatedRev = 0;
                 
                 stdSnap.forEach(doc => {
                     const data = doc.data();
@@ -493,11 +696,13 @@
                 document.getElementById('stat-students').textContent = stdSnap.size;
                 document.getElementById('stat-pending').textContent = "PKR " + totalFeeDue.toLocaleString();
 
-                // Teachers Count (Estimate or Real)
-                const teachSnap = await db.collection('teachers').get();
-                document.getElementById('stat-teachers').textContent = teachSnap.size || 0;
+                // Teachers
+                const teachSnap = await getCollection('teachers').get();
+                teachersCache = [];
+                teachSnap.forEach(doc => teachersCache.push({id: doc.id, ...doc.data()}));
+                document.getElementById('stat-teachers').textContent = teachSnap.size;
 
-                // Revenue (Based on Transaction History)
+                // Revenue
                 let allTransactions = [];
                 studentsCache.forEach(std => {
                     if(std.transactions && Array.isArray(std.transactions)) {
@@ -505,7 +710,6 @@
                     }
                 });
 
-                // Calculate Total Paid
                 const totalPaid = allTransactions.reduce((acc, curr) => acc + (parseInt(curr.amount) || 0), 0);
                 document.getElementById('stat-revenue').textContent = "PKR " + totalPaid.toLocaleString();
 
@@ -520,7 +724,6 @@
             const tbody = document.getElementById('finance-list-body');
             tbody.innerHTML = '';
             
-            // Sort by date desc (assuming date string ISO)
             transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
             if(transactions.length === 0) {
@@ -528,7 +731,6 @@
                 return;
             }
 
-            // Show top 20
             transactions.slice(0, 20).forEach(tx => {
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition">
@@ -542,17 +744,15 @@
             });
         }
 
-        // --- STUDENT MANAGEMENT ---
         function loadStudentList() {
             const tbody = document.getElementById('student-list-body');
             tbody.innerHTML = '';
             
-            // Populate Challan Dropdown simultaneously
             const challanSelect = document.getElementById('challan-student-select');
             challanSelect.innerHTML = '<option value="">Select Student...</option>';
 
             studentsCache.forEach(std => {
-                // Table Row
+                const stdStr = JSON.stringify(std).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-0">
                         <td class="px-6 py-4 font-mono text-slate-500">${std.rollNo}</td>
@@ -569,28 +769,143 @@
                                 : `<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">Clear</span>`}
                         </td>
                         <td class="px-6 py-4 text-slate-400 hover:text-blue-600 cursor-pointer">
-                            <i class="fas fa-edit"></i>
+                            <button onclick='openEditStudent(${stdStr})'><i class="fas fa-edit"></i> Edit</button>
                         </td>
                     </tr>
                 `;
-
-                // Challan Option
                 challanSelect.innerHTML += `<option value="${std.id}">${std.name} (${std.rollNo})</option>`;
             });
         }
-
-        // --- ACTIONS: ADD USERS ---
         
-        // Add Student
+        async function loadTeacherList() {
+            const tbody = document.getElementById('teacher-list-body');
+            tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center">Loading...</td></tr>';
+            try {
+                const snap = await getCollection('teachers').get();
+                tbody.innerHTML = '';
+                teachersCache = [];
+                if(snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center">No teachers added.</td></tr>';
+                    return;
+                }
+                snap.forEach(doc => {
+                    const t = {id: doc.id, ...doc.data()};
+                    teachersCache.push(t);
+                    const tStr = JSON.stringify(t).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50 border-b border-slate-100">
+                            <td class="px-6 py-4 font-medium">${t.name}</td>
+                            <td class="px-6 py-4">${t.subjectSpecialty}</td>
+                            <td class="px-6 py-4 text-slate-500">${t.email}</td>
+                             <td class="px-6 py-4 text-slate-400 hover:text-blue-600 cursor-pointer">
+                                <button onclick='openEditTeacher(${tStr})'><i class="fas fa-edit"></i> Edit</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadStaffList() {
+            const tbody = document.getElementById('staff-list-body');
+            try {
+                const snap = await getCollection('staff').get();
+                tbody.innerHTML = '';
+                staffCache = [];
+                if(snap.empty) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center">No staff found.</td></tr>';
+                    return;
+                }
+                snap.forEach(doc => {
+                    const s = {id: doc.id, ...doc.data()};
+                    staffCache.push(s);
+                    // Staff edit not fully implemented in UI but similar pattern
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50 border-b border-slate-100">
+                            <td class="px-6 py-4 font-medium">${s.name}</td>
+                            <td class="px-6 py-4 capitalize">${s.role}</td>
+                            <td class="px-6 py-4 text-slate-500">${s.email}</td>
+                             <td class="px-6 py-4 text-slate-400 hover:text-blue-600 cursor-pointer">
+                                <button onclick="deleteUser('staff', '${s.id}')"><i class="fas fa-trash hover:text-red-500"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        // --- PAYMENT SETTINGS ---
+        async function loadPaymentSettings() {
+            try {
+                const doc = await getCollection('settings').doc('payment_config').get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data.easypaisa) {
+                        document.getElementById('toggle-ep').checked = data.easypaisa.enabled;
+                        document.getElementById('ep-title').value = data.easypaisa.title || '';
+                        document.getElementById('ep-number').value = data.easypaisa.number || '';
+                    }
+                    if (data.jazzcash) {
+                        document.getElementById('toggle-jc').checked = data.jazzcash.enabled;
+                        document.getElementById('jc-title').value = data.jazzcash.title || '';
+                        document.getElementById('jc-number').value = data.jazzcash.number || '';
+                    }
+                    if (data.bank) {
+                        document.getElementById('toggle-bank').checked = data.bank.enabled;
+                        document.getElementById('bank-name').value = data.bank.bankName || '';
+                        document.getElementById('bank-title').value = data.bank.title || '';
+                        document.getElementById('bank-iban').value = data.bank.iban || '';
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading settings:", error);
+            }
+        }
+
+        async function savePaymentSettings() {
+            const btn = document.querySelector('button[onclick="savePaymentSettings()"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+            btn.disabled = true;
+
+            const config = {
+                easypaisa: {
+                    enabled: document.getElementById('toggle-ep').checked,
+                    title: document.getElementById('ep-title').value,
+                    number: document.getElementById('ep-number').value
+                },
+                jazzcash: {
+                    enabled: document.getElementById('toggle-jc').checked,
+                    title: document.getElementById('jc-title').value,
+                    number: document.getElementById('jc-number').value
+                },
+                bank: {
+                    enabled: document.getElementById('toggle-bank').checked,
+                    bankName: document.getElementById('bank-name').value,
+                    title: document.getElementById('bank-title').value,
+                    iban: document.getElementById('bank-iban').value
+                }
+            };
+
+            try {
+                await getCollection('settings').doc('payment_config').set(config);
+                alert("Payment settings saved successfully!");
+            } catch (error) {
+                console.error(error);
+                alert("Failed to save settings. Check console.");
+            } finally {
+                btn.innerHTML = '<i class="fas fa-save mr-2"></i> Save Changes';
+                btn.disabled = false;
+            }
+        }
+
+        // --- ADD USERS (WITH AUTH CREATION) ---
+        
         document.getElementById('form-add-student').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
-            const btn = form.querySelector('button');
-            const originalText = btn.innerText;
-            btn.innerText = "Creating...";
-            btn.disabled = true;
-
-            const data = {
+            const email = form.email.value;
+            const password = form.password.value;
+            const profileData = {
                 name: form.name.value,
                 fatherName: form.fatherName.value,
                 rollNo: form.rollNo.value,
@@ -602,84 +917,127 @@
                 transactions: [],
                 exams: []
             };
+            handleUserCreation(form, email, password, 'students', profileData, 'Student Created!');
+        });
+
+        document.getElementById('form-add-teacher').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const email = form.email.value;
+            const password = form.password.value;
+            const profileData = {
+                name: form.name.value,
+                subjectSpecialty: form.subject.value,
+                email: email,
+                assignedClasses: [] 
+            };
+            handleUserCreation(form, email, password, 'teachers', profileData, 'Teacher Created!');
+        });
+        
+        document.getElementById('form-add-attender').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const email = form.email.value;
+            const password = form.password.value;
+            const profileData = {
+                name: form.name.value,
+                email: email,
+                role: 'attender'
+            };
+            handleUserCreation(form, email, password, 'staff', profileData, 'Attender Created!');
+        });
+
+        async function handleUserCreation(form, email, password, collectionName, data, successMsg) {
+            const btn = form.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = "Creating Account...";
+            btn.disabled = true;
 
             try {
-                // Add to Firestore
-                await db.collection('students').add(data);
-                alert("Student Profile Created Successfully!");
+                // 1. Create User in Auth using Secondary App
+                const userCred = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+                const uid = userCred.user.uid;
+
+                // 2. Save Profile to Firestore with matching UID
+                await getCollection(collectionName).doc(uid).set(data);
+
+                alert(successMsg);
                 form.reset();
-                closeModal('modal-add-student');
-                initAdmin(); // Refresh list
+                closeModal(form.closest('div[id^="modal-"]').id);
+                initAdmin();
             } catch (err) {
                 console.error(err);
-                alert("Error creating student.");
+                alert("Error: " + err.message);
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
             }
-        });
+        }
 
-         // Add Teacher
-        document.getElementById('form-add-teacher').addEventListener('submit', async (e) => {
-            e.preventDefault();
-             const form = e.target;
-            const btn = form.querySelector('button');
-            const originalText = btn.innerText;
-            btn.innerText = "Adding...";
-            btn.disabled = true;
+        // --- EDIT & DELETE ACTIONS ---
 
-             const data = {
-                name: form.name.value,
-                subjectSpecialty: form.subject.value,
-                email: form.email.value,
-                assignedClasses: [] // Default empty
-            };
+        window.openEditStudent = function(std) {
+            const form = document.getElementById('form-edit-student');
+            form.id.value = std.id;
+            form.name.value = std.name;
+            form.fatherName.value = std.fatherName;
+            form.class.value = std.class;
+            form.section.value = std.section;
+            openModal('modal-edit-student');
+        }
 
-            try {
-                await db.collection('teachers').add(data);
-                alert("Teacher Added Successfully!");
-                form.reset();
-                closeModal('modal-add-teacher');
-                initAdmin();
-            } catch (err) {
-                console.error(err);
-                alert("Error adding teacher.");
-            } finally {
-                 btn.innerText = originalText;
-                 btn.disabled = false;
-            }
-        });
-        
-         // Add Attender
-        document.getElementById('form-add-attender').addEventListener('submit', async (e) => {
+        document.getElementById('form-edit-student').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
-            const btn = form.querySelector('button');
-            const originalText = btn.innerText;
-            btn.innerText = "Adding...";
-            btn.disabled = true;
-
-             const data = {
-                name: form.name.value,
-                email: form.email.value,
-                role: 'attender'
-            };
-
+            const id = form.id.value;
             try {
-                await db.collection('staff').add(data); // Using 'staff' collection or 'attenders'
-                alert("Attender Added Successfully!");
-                form.reset();
-                closeModal('modal-add-attender');
-            } catch (err) {
-                console.error(err);
-                alert("Error adding attender.");
-            } finally {
-                 btn.innerText = originalText;
-                 btn.disabled = false;
-            }
+                await getCollection('students').doc(id).update({
+                    name: form.name.value,
+                    fatherName: form.fatherName.value,
+                    class: form.class.value,
+                    section: form.section.value
+                });
+                alert("Student Updated!");
+                closeModal('modal-edit-student');
+                initAdmin();
+            } catch(e) { alert("Update failed: " + e.message); }
         });
 
-        // --- ACTIONS: GENERATE CHALLAN ---
+        window.openEditTeacher = function(t) {
+            const form = document.getElementById('form-edit-teacher');
+            form.id.value = t.id;
+            form.name.value = t.name;
+            form.subject.value = t.subjectSpecialty;
+            openModal('modal-edit-teacher');
+        }
+
+         document.getElementById('form-edit-teacher').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const id = form.id.value;
+            try {
+                await getCollection('teachers').doc(id).update({
+                    name: form.name.value,
+                    subjectSpecialty: form.subject.value
+                });
+                alert("Teacher Updated!");
+                closeModal('modal-edit-teacher');
+                initAdmin();
+            } catch(e) { alert("Update failed: " + e.message); }
+        });
+
+        window.deleteUser = async function(collection, id) {
+            if(!confirm("Are you sure you want to delete this user? This cannot be undone.")) return;
+            try {
+                await getCollection(collection).doc(id).delete();
+                alert("User deleted from database.");
+                closeModal('modal-edit-student');
+                closeModal('modal-edit-teacher');
+                initAdmin();
+            } catch(e) { alert("Delete failed: " + e.message); }
+        }
+
+        // --- CHALLAN ---
         document.getElementById('form-challan').addEventListener('submit', async (e) => {
             e.preventDefault();
             const stdId = document.getElementById('challan-student-select').value;
@@ -689,20 +1047,13 @@
             if(!stdId) return;
 
             try {
-                // Update Student Record (Increment feeDue)
-                const stdRef = db.collection('students').doc(stdId);
-                
-                // We don't add a transaction here because transactions are usually PAYMENTS.
-                // However, some systems log "invoices" as transactions with negative/debit type.
-                // For this simple system, we just increase the Due Amount.
-                
+                const stdRef = getCollection('students').doc(stdId);
                 await stdRef.update({
                     feeDue: firebase.firestore.FieldValue.increment(amount)
                 });
-
-                alert(`Challan Generated! ${title} of PKR ${amount} added to student's due balance.`);
+                alert(`Challan Generated! Added PKR ${amount} to balance.`);
                 closeModal('modal-challan');
-                initAdmin(); // Refresh stats
+                loadDashboardStats();
             } catch (err) {
                 console.error(err);
                 alert("Error generating challan.");
@@ -713,11 +1064,10 @@
         window.showSection = function(id) {
             document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
-            document.getElementById('page-title').textContent = id.charAt(0).toUpperCase() + id.slice(1);
+            document.getElementById('page-title').textContent = id === 'settings' ? 'Payment Configuration' : id.charAt(0).toUpperCase() + id.slice(1);
             
-            // Sidebar Active
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-            // Note: In real implementation, match ID to specific sidebar button index
+            document.getElementById('nav-' + id).classList.add('active');
         }
 
         window.openModal = function(id) {
