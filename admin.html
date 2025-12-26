@@ -41,28 +41,24 @@
 
         /* Print Styles */
         @media print {
-            /* Hide default browser header/footer (URL, filename, date) */
-            @page {
-                margin: 0;
-                size: auto;
-            }
-            
+            @page { margin: 0; size: auto; }
             body * { visibility: hidden; }
+            
+            /* Receipt Print Area */
             #printable-area, #printable-area * { visibility: visible; }
             #printable-area { 
-                position: fixed; 
-                left: 0; 
-                top: 0; 
-                width: 100%; 
-                height: 100vh; 
-                background: white; 
-                z-index: 9999;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                padding: 40px 60px; /* Adjusted padding for A4 */
-                box-sizing: border-box;
+                position: fixed; left: 0; top: 0; width: 100%; height: 100vh; 
+                background: white; z-index: 9999; display: flex; flex-direction: column; 
+                justify-content: space-between; padding: 40px 60px; box-sizing: border-box;
             }
+
+            /* Timetable Print Area */
+            #timetable-print-area, #timetable-print-area * { visibility: visible; }
+            #timetable-print-area {
+                position: fixed; left: 0; top: 0; width: 100%; height: 100%;
+                background: white; z-index: 9999; padding: 40px; box-sizing: border-box;
+            }
+
             .no-print { display: none !important; }
         }
     </style>
@@ -74,7 +70,7 @@
         <div class="h-20 flex items-center px-6 border-b border-slate-800 bg-slate-950">
             <div class="flex items-center space-x-3">
                 <div class="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">G</div>
-                <span class="text-white font-bold text-lg tracking-wide">Grace Academy</span>
+                <span class="text-white font-bold text-lg tracking-wide">Grace Admin</span>
             </div>
         </div>
         
@@ -82,6 +78,10 @@
             <button onclick="showSection('dashboard')" class="sidebar-link active w-full flex items-center space-x-3 px-6 py-3.5" id="nav-dashboard">
                 <i class="fas fa-chart-pie w-5"></i>
                 <span class="font-medium">Overview</span>
+            </button>
+            <button onclick="showSection('announcements')" class="sidebar-link w-full flex items-center space-x-3 px-6 py-3.5" id="nav-announcements">
+                <i class="fas fa-bullhorn w-5"></i>
+                <span class="font-medium">Announcements</span>
             </button>
             
             <div class="px-6 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider mt-4">Academic</div>
@@ -185,12 +185,86 @@
                             <tr>
                                 <th class="px-6 py-4">Class Name</th>
                                 <th class="px-6 py-4">Section</th>
-                                <th class="px-6 py-4">Students Enrolled</th>
-                                <th class="px-6 py-4 text-right">Actions</th>
+                                <th class="px-6 py-4">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="classes-list-body" class="divide-y divide-slate-200"></tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- SECTION: CLASS DETAIL (Manage Timetable/Tests) -->
+            <div id="class-detail" class="content-section hidden fade-in">
+                <button onclick="showSection('classes')" class="text-slate-500 hover:text-slate-700 mb-4 flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Classes
+                </button>
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 id="detail-class-title" class="text-2xl font-bold text-slate-800">Class Detail</h2>
+                        <p class="text-sm text-slate-500">Manage Schedule & Assessments</p>
+                    </div>
+                    <div class="space-x-2">
+                        <button onclick="openModal('modal-add-timetable')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow transition">
+                            <i class="fas fa-clock mr-2"></i> Add Slot
+                        </button>
+                        <button onclick="openModal('modal-add-test')" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg shadow transition">
+                            <i class="fas fa-clipboard-list mr-2"></i> Schedule Test
+                        </button>
+                        <button onclick="printTimetable()" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg shadow transition">
+                            <i class="fas fa-print mr-2"></i> Print Timetable
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Timetable -->
+                    <div class="glass-panel rounded-xl p-6">
+                        <h3 class="font-bold text-lg text-slate-800 mb-4">Weekly Timetable</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs uppercase bg-slate-100 text-slate-600">
+                                    <tr>
+                                        <th class="px-3 py-2">Day</th>
+                                        <th class="px-3 py-2">Time</th>
+                                        <th class="px-3 py-2">Subject (Teacher)</th>
+                                        <th class="px-3 py-2"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detail-timetable-body" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tests -->
+                    <div class="glass-panel rounded-xl p-6">
+                        <h3 class="font-bold text-lg text-slate-800 mb-4">Upcoming Tests</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs uppercase bg-slate-100 text-slate-600">
+                                    <tr>
+                                        <th class="px-3 py-2">Date</th>
+                                        <th class="px-3 py-2">Subject</th>
+                                        <th class="px-3 py-2">Topic</th>
+                                        <th class="px-3 py-2"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detail-tests-body" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: ANNOUNCEMENTS -->
+            <div id="announcements" class="content-section hidden fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-800">Announcements</h2>
+                    <button onclick="openModal('modal-add-announcement')" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg shadow-lg transition font-medium">
+                        <i class="fas fa-bullhorn mr-2"></i> New Announcement
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="announcements-list">
+                    <!-- Populated via JS -->
                 </div>
             </div>
 
@@ -363,7 +437,92 @@
         </div>
     </div>
 
-    <!-- MODAL: MANUAL RECEIPT (For Cash Payments) -->
+    <!-- MODAL: ADD TIMETABLE SLOT -->
+    <div id="modal-add-timetable" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+            <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center rounded-t-xl">
+                <h3 class="font-bold text-white text-lg">Add Time Table Slot</h3>
+                <button onclick="closeModal('modal-add-timetable')" class="text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="form-add-timetable" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Day</label>
+                    <select name="day" class="w-full border p-2.5 rounded-lg">
+                        <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+                        <option>Thursday</option><option>Friday</option><option>Saturday</option>
+                    </select>
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex-1"><label class="block text-sm">Start Time</label><input type="time" name="start" required class="w-full border p-2.5 rounded-lg"></div>
+                    <div class="flex-1"><label class="block text-sm">End Time</label><input type="time" name="end" required class="w-full border p-2.5 rounded-lg"></div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Subject</label>
+                    <input type="text" name="subject" required class="w-full border p-2.5 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Teacher</label>
+                    <select name="teacherId" id="timetable-teacher-select" class="w-full border p-2.5 rounded-lg"></select>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg">Add Slot</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: SCHEDULE TEST -->
+    <div id="modal-add-test" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+            <div class="bg-teal-600 px-6 py-4 flex justify-between items-center rounded-t-xl">
+                <h3 class="font-bold text-white text-lg">Schedule Test</h3>
+                <button onclick="closeModal('modal-add-test')" class="text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="form-add-test" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Subject</label>
+                    <input type="text" name="subject" required class="w-full border p-2.5 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Topic / Syllabus</label>
+                    <input type="text" name="topic" required class="w-full border p-2.5 rounded-lg">
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex-1"><label class="block text-sm">Date</label><input type="date" name="date" required class="w-full border p-2.5 rounded-lg"></div>
+                    <div class="flex-1"><label class="block text-sm">Time</label><input type="time" name="time" required class="w-full border p-2.5 rounded-lg"></div>
+                </div>
+                <button type="submit" class="w-full bg-teal-600 text-white py-2.5 rounded-lg">Schedule</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD ANNOUNCEMENT -->
+    <div id="modal-add-announcement" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+            <div class="bg-blue-600 px-6 py-4 flex justify-between items-center rounded-t-xl">
+                <h3 class="font-bold text-white text-lg">New Announcement</h3>
+                <button onclick="closeModal('modal-add-announcement')" class="text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="form-add-announcement" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                    <input type="text" name="title" required class="w-full border p-2.5 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Message</label>
+                    <textarea name="message" rows="4" required class="w-full border p-2.5 rounded-lg"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Audience</label>
+                    <select name="audience" class="w-full border p-2.5 rounded-lg">
+                        <option value="all">Everyone (Students & Teachers)</option>
+                        <option value="teachers">Teachers Only</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg">Broadcast</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: MANUAL RECEIPT -->
     <div id="modal-receipt" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4">
             <div class="bg-emerald-600 px-6 py-4 flex justify-between items-center rounded-t-xl">
@@ -479,6 +638,26 @@
         </div>
     </div>
 
+    <!-- HIDDEN TIMETABLE PRINT -->
+    <div id="timetable-print-area" class="hidden font-serif">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-slate-900">The Grace Academy</h1>
+            <h2 class="text-2xl mt-2">Class Timetable</h2>
+            <h3 class="text-xl mt-1 text-slate-600" id="print-tt-class"></h3>
+        </div>
+        <table class="w-full border-collapse border border-slate-900">
+            <thead class="bg-slate-100">
+                <tr>
+                    <th class="border border-slate-900 p-3 text-left">Day</th>
+                    <th class="border border-slate-900 p-3 text-left">Time</th>
+                    <th class="border border-slate-900 p-3 text-left">Subject</th>
+                    <th class="border border-slate-900 p-3 text-left">Teacher</th>
+                </tr>
+            </thead>
+            <tbody id="print-tt-body"></tbody>
+        </table>
+    </div>
+
     <!-- MODAL: ADD STUDENT -->
     <div id="modal-add-student" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
@@ -579,6 +758,8 @@
 
         let classesData = [];
         let studentsData = [];
+        let teachersData = [];
+        let currentClassId = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             const session = JSON.parse(localStorage.getItem('grace_user_session'));
@@ -599,6 +780,7 @@
             loadTransactions();
             loadPaymentApprovals();
             loadPaymentSettings();
+            loadAnnouncements();
         }
 
         // --- CLASSES ---
@@ -618,11 +800,13 @@
                     const cls = { id: doc.id, ...doc.data() };
                     classesData.push(cls);
                     tbody.innerHTML += `
-                        <tr class="border-b hover:bg-slate-50">
-                            <td class="px-6 py-4 font-bold">${cls.name}</td>
+                        <tr class="border-b hover:bg-slate-50 cursor-pointer" onclick="openClassDetail('${cls.id}')">
+                            <td class="px-6 py-4 font-bold text-indigo-600">${cls.name}</td>
                             <td class="px-6 py-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">${cls.section}</span></td>
-                            <td class="px-6 py-4 text-gray-500">View in Students</td>
-                            <td class="px-6 py-4 text-right"><button onclick="deleteClass('${cls.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button></td>
+                            <td class="px-6 py-4 text-right">
+                                <button onclick="event.stopPropagation(); deleteClass('${cls.id}')" class="text-red-500 hover:text-red-700 px-2"><i class="fas fa-trash"></i></button>
+                                <button class="text-blue-500 hover:text-blue-700 px-2"><i class="fas fa-arrow-right"></i> Manage</button>
+                            </td>
                         </tr>
                     `;
                     const val = JSON.stringify({ name: cls.name, section: cls.section }).replace(/"/g, '&quot;');
@@ -631,6 +815,169 @@
                     teacherSelect.innerHTML += `<option value="${val}">${display}</option>`;
                 });
             } catch(e) { console.error(e); }
+        }
+
+        async function openClassDetail(id) {
+            currentClassId = id;
+            const cls = classesData.find(c => c.id === id);
+            document.getElementById('detail-class-title').textContent = `${cls.name} - ${cls.section}`;
+            showSection('class-detail');
+            
+            // Load Timetable
+            const ttBody = document.getElementById('detail-timetable-body');
+            ttBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">Loading...</td></tr>';
+            try {
+                const ttSnap = await getCollection('classes').doc(id).collection('timetable').orderBy('day').get();
+                ttBody.innerHTML = '';
+                if(ttSnap.empty) ttBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400">No slots added.</td></tr>';
+                
+                const daysOrder = { 'Monday':1, 'Tuesday':2, 'Wednesday':3, 'Thursday':4, 'Friday':5, 'Saturday':6 };
+                let slots = [];
+                ttSnap.forEach(d => slots.push({id:d.id, ...d.data()}));
+                slots.sort((a,b) => (daysOrder[a.day] || 7) - (daysOrder[b.day] || 7) || a.start.localeCompare(b.start));
+
+                slots.forEach(slot => {
+                    const tName = teachersData.find(t => t.id === slot.teacherId)?.name || 'Unknown';
+                    ttBody.innerHTML += `
+                        <tr class="border-b">
+                            <td class="px-3 py-2 font-medium">${slot.day}</td>
+                            <td class="px-3 py-2 text-xs font-mono">${slot.start} - ${slot.end}</td>
+                            <td class="px-3 py-2">${slot.subject} <span class="text-xs text-gray-500">(${tName})</span></td>
+                            <td class="px-3 py-2 text-right"><button onclick="deleteTimetableSlot('${slot.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-times"></i></button></td>
+                        </tr>
+                    `;
+                });
+            } catch(e){ console.error(e); }
+
+            // Load Tests
+            const testsBody = document.getElementById('detail-tests-body');
+            try {
+                const tSnap = await getCollection('classes').doc(id).collection('tests').orderBy('date').get();
+                testsBody.innerHTML = '';
+                if(tSnap.empty) testsBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400">No scheduled tests.</td></tr>';
+                tSnap.forEach(doc => {
+                    const t = doc.data();
+                    testsBody.innerHTML += `
+                        <tr class="border-b">
+                            <td class="px-3 py-2 text-xs">${new Date(t.date).toLocaleDateString()} ${t.time}</td>
+                            <td class="px-3 py-2 font-medium">${t.subject}</td>
+                            <td class="px-3 py-2 text-xs">${t.topic}</td>
+                            <td class="px-3 py-2 text-right"><button onclick="deleteTest('${doc.id}')" class="text-red-500"><i class="fas fa-trash"></i></button></td>
+                        </tr>
+                    `;
+                });
+            } catch(e) { console.error(e); }
+
+            // Populate Teacher Select in Modal
+            const tSelect = document.getElementById('timetable-teacher-select');
+            tSelect.innerHTML = '';
+            teachersData.forEach(t => tSelect.innerHTML += `<option value="${t.id}">${t.name} (${t.subjectSpecialty})</option>`);
+        }
+
+        // Add Timetable Slot
+        document.getElementById('form-add-timetable').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if(!currentClassId) return;
+            const data = {
+                day: e.target.day.value, start: e.target.start.value, end: e.target.end.value,
+                subject: e.target.subject.value, teacherId: e.target.teacherId.value
+            };
+            await getCollection('classes').doc(currentClassId).collection('timetable').add(data);
+            closeModal('modal-add-timetable');
+            openClassDetail(currentClassId);
+        });
+
+        async function deleteTimetableSlot(id) {
+            if(confirm("Delete Slot?")) {
+                await getCollection('classes').doc(currentClassId).collection('timetable').doc(id).delete();
+                openClassDetail(currentClassId);
+            }
+        }
+
+        // Add Test
+        document.getElementById('form-add-test').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if(!currentClassId) return;
+            const data = {
+                subject: e.target.subject.value, topic: e.target.topic.value,
+                date: e.target.date.value, time: e.target.time.value
+            };
+            await getCollection('classes').doc(currentClassId).collection('tests').add(data);
+            closeModal('modal-add-test');
+            openClassDetail(currentClassId);
+        });
+
+        async function deleteTest(id) {
+            if(confirm("Delete Test?")) {
+                await getCollection('classes').doc(currentClassId).collection('tests').doc(id).delete();
+                openClassDetail(currentClassId);
+            }
+        }
+
+        function printTimetable() {
+            if(!currentClassId) return;
+            const cls = classesData.find(c => c.id === currentClassId);
+            document.getElementById('print-tt-class').textContent = `${cls.name} - ${cls.section}`;
+            const printBody = document.getElementById('print-tt-body');
+            printBody.innerHTML = '';
+            
+            // Clone rows from detail view, remove delete button column
+            const sourceRows = document.querySelectorAll('#detail-timetable-body tr');
+            sourceRows.forEach(row => {
+                const newRow = row.cloneNode(true);
+                newRow.removeChild(newRow.lastElementChild);
+                // Add borders for print style
+                Array.from(newRow.children).forEach(td => td.classList.add('border', 'border-slate-900', 'p-3'));
+                printBody.appendChild(newRow);
+            });
+
+            // Hack to trigger print style for #timetable-print-area
+            const style = document.createElement('style');
+            style.innerHTML = `@media print { #printable-area { display: none !important; } #timetable-print-area { display: block !important; } }`;
+            document.head.appendChild(style);
+            window.print();
+            document.head.removeChild(style);
+        }
+
+        // --- ANNOUNCEMENTS ---
+        async function loadAnnouncements() {
+            const container = document.getElementById('announcements-list');
+            try {
+                const snap = await getCollection('announcements').orderBy('createdAt', 'desc').get();
+                container.innerHTML = '';
+                snap.forEach(doc => {
+                    const a = doc.data();
+                    container.innerHTML += `
+                        <div class="glass-panel p-6 rounded-xl relative">
+                            <button onclick="deleteAnnouncement('${doc.id}')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                            <span class="text-xs font-bold uppercase ${a.audience === 'teachers' ? 'text-indigo-600 bg-indigo-100' : 'text-blue-600 bg-blue-100'} px-2 py-1 rounded mb-2 inline-block">${a.audience === 'teachers' ? 'Teachers Only' : 'Everyone'}</span>
+                            <h3 class="font-bold text-lg mb-2">${a.title}</h3>
+                            <p class="text-gray-600 text-sm mb-4">${a.message}</p>
+                            <p class="text-xs text-gray-400">${new Date(a.createdAt).toLocaleString()}</p>
+                        </div>
+                    `;
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        document.getElementById('form-add-announcement').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await getCollection('announcements').add({
+                title: e.target.title.value,
+                message: e.target.message.value,
+                audience: e.target.audience.value,
+                createdAt: new Date().toISOString()
+            });
+            closeModal('modal-add-announcement');
+            e.target.reset();
+            loadAnnouncements();
+        });
+
+        async function deleteAnnouncement(id) {
+            if(confirm("Delete announcement?")) {
+                await getCollection('announcements').doc(id).delete();
+                loadAnnouncements();
+            }
         }
 
         document.getElementById('form-add-class').addEventListener('submit', async (e) => {
@@ -685,8 +1032,10 @@
             const tbody = document.getElementById('teacher-list-body');
             const snap = await getCollection('teachers').get();
             tbody.innerHTML = '';
+            teachersData = [];
             snap.forEach(doc => {
                 const t = { id: doc.id, ...doc.data() };
+                teachersData.push(t);
                 const assigned = t.assignedClasses ? t.assignedClasses.map(c => `${c.class}-${c.section}`).join(', ') : 'None';
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-slate-50">
@@ -788,7 +1137,13 @@
                 document.getElementById('print-amount').innerText = `PKR ${amount}`;
                 document.getElementById('print-total').innerText = `PKR ${amount}`;
 
+                // Hack to ensure only receipt prints (not timetable)
+                const style = document.createElement('style');
+                style.innerHTML = `@media print { #timetable-print-area { display: none !important; } #printable-area { display: flex !important; } }`;
+                document.head.appendChild(style);
                 window.print();
+                document.head.removeChild(style);
+
                 closeModal('modal-receipt');
                 loadDashboardStats();
             } catch(e) { alert("Error: " + e.message); }
