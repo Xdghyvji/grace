@@ -3,274 +3,602 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Grace Academy - Attender Panel</title>
+    <title>Attender Portal - The Grace Academy</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-        .sidebar { transition: transform 0.3s ease-in-out; }
-        .sidebar.hidden-mobile { transform: translateX(-100%); }
-        @media (min-width: 1024px) { .sidebar.hidden-mobile { transform: translateX(0); } }
-        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
-        .loader { border: 8px solid #f3f3f3; border-top: 8px solid #D97706; border-radius: 50%; width: 60px; height: 60px; animation: spin 2s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .active-link { background-color: #B45309; color: white; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #e5e7eb; }
+        ::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 10px; }
+        
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Custom Radio Button for Attendance */
+        .attendance-radio:checked + label {
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .attendance-radio:checked + label.present { background-color: #dcfce7; border-color: #22c55e; color: #15803d; }
+        .attendance-radio:checked + label.absent { background-color: #fee2e2; border-color: #ef4444; color: #b91c1c; }
+        .attendance-radio:checked + label.leave { background-color: #fef9c3; border-color: #eab308; color: #854d0e; }
     </style>
 </head>
-<body class="font-sans antialiased text-gray-800 bg-gray-50 flex min-h-screen">
+<body class="flex h-screen overflow-hidden text-gray-800">
 
-    <div id="loading-overlay">
-        <div class="loader"></div>
-        <p id="loading-text" class="mt-4 text-lg text-gray-700">Loading Attender Portal...</p>
-    </div>
-
-    <aside id="sidebar" class="sidebar bg-gradient-to-br from-yellow-600 to-yellow-800 text-white w-64 p-6 space-y-6 flex flex-col hidden-mobile fixed inset-y-0 left-0 lg:relative lg:translate-x-0 z-40 shadow-lg">
-        <div class="flex items-center space-x-3 border-b border-yellow-500 pb-4">
-            <img src="download (2).png" alt="Academy Logo" class="h-12 w-auto bg-white rounded-full">
-            <span class="text-2xl font-bold tracking-tight">Attender</span>
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col z-20">
+        <div class="h-16 flex items-center px-6 border-b border-gray-200">
+            <div class="flex items-center space-x-2 text-indigo-700">
+                <i class="fas fa-clipboard-check text-2xl"></i>
+                <span class="text-xl font-bold tracking-tight">Grace Attendance</span>
+            </div>
         </div>
-        <nav class="flex-1 space-y-2">
-            <a href="#" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg bg-yellow-700 text-white active-link">
-                <i class="fas fa-clipboard-check w-6"></i><span>Mark Attendance</span>
-            </a>
+        
+        <nav class="flex-1 py-6 px-3 space-y-1">
+            <button onclick="showSection('dashboard')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors bg-indigo-50 text-indigo-700 font-medium">
+                <i class="fas fa-home w-5"></i>
+                <span>Overview</span>
+            </button>
+            <button onclick="showSection('mark-attendance')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium">
+                <i class="fas fa-user-check w-5"></i>
+                <span>Mark Attendance</span>
+            </button>
+            <button onclick="showSection('reports')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium">
+                <i class="fas fa-file-export w-5"></i>
+                <span>Reports & Export</span>
+            </button>
         </nav>
-        <div class="border-t border-yellow-500 pt-4">
-            <button id="logout-button" class="w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-lg bg-red-600 hover:bg-red-700 transition duration-200 mt-2">
-                <i class="fas fa-sign-out-alt w-6"></i><span>Logout</span>
+
+        <div class="p-4 border-t border-gray-200">
+            <div class="flex items-center space-x-3 mb-4">
+                <img id="user-avatar" src="" class="h-9 w-9 rounded-full bg-gray-200">
+                <div>
+                    <p id="user-name" class="text-sm font-semibold text-gray-700">Loading...</p>
+                    <p class="text-xs text-gray-500">Staff Member</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors text-sm font-medium">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Log Out</span>
             </button>
         </div>
     </aside>
 
-    <div class="flex-1 flex flex-col">
-        <header class="bg-white shadow-md p-4 flex justify-between items-center lg:hidden sticky top-0 z-30">
-            <button id="sidebar-toggle" class="text-yellow-800 focus:outline-none">
-                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-            </button>
-            <h1 class="text-2xl font-bold text-yellow-900">Attendance Panel</h1>
-            <div class="flex items-center space-x-3">
-                <span class="font-medium text-gray-700 hidden sm:block" id="topbar-name">Attender</span>
-                <img id="topbar-img" src="https://placehold.co/40x40/D97706/FFFFFF?text=A" class="h-10 w-10 rounded-full border-2 border-yellow-500">
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        
+        <!-- Top Bar -->
+        <header class="bg-white border-b border-gray-200 z-10 h-16 flex items-center justify-between px-6">
+            <div class="flex items-center md:hidden">
+                <button class="text-gray-500 mr-4 focus:outline-none"><i class="fas fa-bars text-xl"></i></button>
+                <span class="font-bold text-lg text-gray-800">Attendance Portal</span>
+            </div>
+            
+            <div class="hidden md:flex items-center space-x-2 text-gray-500 text-sm">
+                <span><i class="far fa-calendar-alt mr-1"></i> Today:</span>
+                <span id="header-date" class="font-semibold text-gray-700">--</span>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <button onclick="location.reload()" class="p-2 text-gray-400 hover:text-indigo-600 transition-colors" title="Refresh Data">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
             </div>
         </header>
 
-        <main class="flex-1 p-6 lg:p-10 bg-gray-50">
-            <div class="bg-white p-8 rounded-lg shadow-xl">
-                <h2 class="text-4xl font-extrabold text-yellow-900 mb-8 border-b-2 border-yellow-200 pb-4">Mark Student Attendance</h2>
+        <!-- Main Scrollable Area -->
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6 relative">
+            
+            <!-- Loading Overlay -->
+            <div id="loading-overlay" class="absolute inset-0 bg-white/90 z-50 flex items-center justify-center backdrop-blur-sm">
+                <div class="flex flex-col items-center">
+                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-3"></div>
+                    <p class="text-gray-500 font-medium">Syncing Data...</p>
+                </div>
+            </div>
+
+            <!-- SECTION: DASHBOARD -->
+            <div id="dashboard" class="content-section fade-in">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Daily Overview</h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div>
-                        <label class="block font-medium mb-2">Date</label>
-                        <input type="date" id="attendance-date" class="w-full p-3 border rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500">
+                    <!-- Card 1 -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="bg-blue-50 text-blue-600 h-10 w-10 rounded-lg flex items-center justify-center text-lg">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <span class="text-xs font-semibold bg-gray-100 text-gray-500 px-2 py-1 rounded">Total</span>
+                        </div>
+                        <h3 id="stat-total-students" class="text-3xl font-bold text-gray-800">--</h3>
+                        <p class="text-sm text-gray-500 mt-1">Students Registered</p>
                     </div>
-                    <div>
-                        <label class="block font-medium mb-2">Class</label>
-                        <select id="class-select" class="w-full p-3 border rounded-lg shadow-sm focus:ring-yellow-500 focus:border-yellow-500">
-                            <option value="">Select Class</option>
-                        </select>
+
+                    <!-- Card 2 -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="bg-green-50 text-green-600 h-10 w-10 rounded-lg flex items-center justify-center text-lg">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <span class="text-xs font-semibold bg-green-100 text-green-700 px-2 py-1 rounded">Today</span>
+                        </div>
+                        <h3 id="stat-present-today" class="text-3xl font-bold text-gray-800">--</h3>
+                        <p class="text-sm text-gray-500 mt-1">Marked Present</p>
                     </div>
-                    <div class="flex items-end">
-                        <button id="load-students-btn" class="w-full bg-yellow-600 text-white p-3 rounded-lg font-bold hover:bg-yellow-700 transition shadow-md">
-                            Load Students
-                        </button>
+
+                    <!-- Card 3 -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="bg-indigo-50 text-indigo-600 h-10 w-10 rounded-lg flex items-center justify-center text-lg">
+                                <i class="fas fa-school"></i>
+                            </div>
+                        </div>
+                        <h3 id="stat-classes-count" class="text-3xl font-bold text-gray-800">--</h3>
+                        <p class="text-sm text-gray-500 mt-1">Active Classes</p>
                     </div>
                 </div>
 
-                <div id="attendance-sheet" class="hidden">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-gray-700">Student List</h3>
-                        <div class="space-x-2">
-                             <button onclick="markAll('Present')" class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded hover:bg-green-200">All Present</button>
-                             <button onclick="markAll('Absent')" class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded hover:bg-red-200">All Absent</button>
-                        </div>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                        <h3 class="font-bold text-gray-800">Recent Attendance Logs</h3>
+                        <button onclick="showSection('reports')" class="text-indigo-600 text-sm hover:underline font-medium">View All History</button>
                     </div>
-                    
-                    <div class="overflow-x-auto border rounded-lg shadow-sm">
-                        <table class="min-w-full bg-white">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th class="py-3 px-4 text-left font-semibold text-gray-600">Roll No</th>
-                                    <th class="py-3 px-4 text-left font-semibold text-gray-600">Name</th>
-                                    <th class="py-3 px-4 text-center font-semibold text-gray-600">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="student-list-body" class="divide-y divide-gray-200"></tbody>
-                        </table>
-                    </div>
-
-                    <div class="mt-8 text-right">
-                        <button id="save-attendance-btn" class="bg-green-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-green-700 transition shadow-lg transform hover:scale-105">
-                            Save Attendance
-                        </button>
+                    <div id="recent-logs-list" class="divide-y divide-gray-100">
+                        <div class="p-6 text-center text-gray-400">Loading logs...</div>
                     </div>
                 </div>
             </div>
+
+            <!-- SECTION: MARK ATTENDANCE -->
+            <div id="mark-attendance" class="content-section hidden fade-in">
+                <div class="max-w-4xl mx-auto">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Select Class to Mark</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Class</label>
+                                <select id="att-class-select" class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-gray-50">
+                                    <option value="10th">10th Grade</option>
+                                    <option value="9th">9th Grade</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Section</label>
+                                <select id="att-section-select" class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-gray-50">
+                                    <option value="A">Section A</option>
+                                    <option value="B">Section B</option>
+                                </select>
+                            </div>
+                            <button onclick="loadStudentsForAttendance()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg transition shadow-sm">
+                                Fetch Students
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="attendance-sheet" class="hidden">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                                <div>
+                                    <h3 class="font-bold text-gray-800 text-lg">Attendance Sheet</h3>
+                                    <p class="text-sm text-gray-500" id="sheet-date-display">--</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button type="button" onclick="markAll('Present')" class="px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">Mark All Present</button>
+                                    <button type="button" onclick="markAll('Absent')" class="px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">Mark All Absent</button>
+                                </div>
+                            </div>
+                            
+                            <div class="divide-y divide-gray-100" id="student-list-container">
+                                <!-- Students Injected Here -->
+                            </div>
+
+                            <div class="p-6 bg-gray-50 border-t border-gray-200">
+                                <button onclick="saveAttendance()" class="w-full md:w-auto md:float-right bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition transform hover:-translate-y-0.5">
+                                    <i class="fas fa-save mr-2"></i> Save Permanent Record
+                                </button>
+                                <div class="clear-both"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: REPORTS -->
+            <div id="reports" class="content-section hidden fade-in">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Export Attendance Data</h2>
+                    <p class="text-gray-600 mb-6">Download detailed attendance sheets in Excel-compatible CSV format.</p>
+                    
+                    <div class="flex flex-col md:flex-row gap-4 items-end">
+                        <div class="flex-1 w-full">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
+                            <input type="date" id="export-date" class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-gray-50">
+                        </div>
+                        <div class="flex-1 w-full">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Class</label>
+                            <select id="export-class" class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-gray-50">
+                                <option value="10th">10th</option>
+                                <option value="9th">9th</option>
+                            </select>
+                        </div>
+                         <div class="flex-1 w-full">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Section</label>
+                            <select id="export-section" class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-gray-50">
+                                <option value="A">Section A</option>
+                                <option value="B">Section B</option>
+                            </select>
+                        </div>
+                        <button onclick="downloadCSV()" class="bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-6 rounded-lg transition shadow-sm w-full md:w-auto">
+                            <i class="fas fa-file-csv mr-2"></i> Download Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100">
+                        <h3 class="font-bold text-gray-800">Historical Records Preview</h3>
+                    </div>
+                    <div class="p-8 text-center" id="history-placeholder">
+                        <div class="inline-block p-4 rounded-full bg-gray-100 text-gray-400 mb-3">
+                            <i class="fas fa-history text-2xl"></i>
+                        </div>
+                        <p class="text-gray-500">Select filters above to download attendance records.</p>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, setDoc, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script>
+        // --- FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDrOEtaX7Hhp248bI8oQiMTiGCbK2QdMho",
+            authDomain: "sultania-3e5ca.firebaseapp.com",
+            projectId: "sultania-3e5ca",
+            storageBucket: "sultania-3e5ca.firebasestorage.app",
+            messagingSenderId: "429093155759",
+            appId: "1:429093155759:web:76224bef015291ba83355a",
+            measurementId: "G-KBDE0PLY8R"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-       const firebaseConfig = {
-  apiKey: "AIzaSyBPyGJ_qX58Ye3Z8BTiKnYGNMYROnyHlGA",
-  authDomain: "mubashir-2b7cc.firebaseapp.com",
-  projectId: "mubashir-2b7cc",
-  storageBucket: "mubashir-2b7cc.firebasestorage.app",
-  messagingSenderId: "107494735119",
-  appId: "1:107494735119:web:c686025b749196d39e527a",
-  measurementId: "G-J1WMVSB6J4"
-};
-        
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // --- GLOBAL STATE ---
+        let currentStudentsList = []; // Array of student objects currently loaded in the sheet
 
-        const loadingOverlay = document.getElementById('loading-overlay');
-        const loadingText = document.getElementById('loading-text');
-        
-        // Initialize Date Input with Today
-        document.getElementById('attendance-date').valueAsDate = new Date();
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const session = JSON.parse(localStorage.getItem('grace_user_session'));
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user && !user.isAnonymous) {
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists() && userDoc.data().role === 'attender') {
-                    const attenderDoc = await getDoc(doc(db, "attenders", user.uid));
-                    if(attenderDoc.exists()) {
-                        const data = attenderDoc.data();
-                        document.getElementById('topbar-name').textContent = data.name;
-                    }
-                    loadClasses();
-                    loadingOverlay.style.display = 'none';
-                } else {
-                    window.location.href = 'login.html';
-                }
-            } else {
+            if (!session || !session.isLoggedIn || session.role !== 'attender') {
                 window.location.href = 'login.html';
-            }
-        });
-
-        async function loadClasses() {
-            const q = query(collection(db, 'classes'), orderBy('name'));
-            const snapshot = await getDocs(q);
-            const select = document.getElementById('class-select');
-            snapshot.forEach(doc => {
-                const opt = document.createElement('option');
-                opt.value = doc.id;
-                opt.textContent = doc.data().name;
-                select.appendChild(opt);
-            });
-        }
-
-        document.getElementById('load-students-btn').addEventListener('click', async () => {
-            const classId = document.getElementById('class-select').value;
-            const date = document.getElementById('attendance-date').value;
-
-            if (!classId || !date) { alert('Please select a class and date.'); return; }
-
-            const listBody = document.getElementById('student-list-body');
-            listBody.innerHTML = '<tr><td colspan="3" class="text-center p-4">Loading...</td></tr>';
-            document.getElementById('attendance-sheet').classList.remove('hidden');
-
-            // Fetch students
-            const studentsQ = query(collection(db, 'students'), where('classId', '==', classId), orderBy('rollNo'));
-            const studentsSnap = await getDocs(studentsQ);
-            
-            // Check if attendance already exists
-            const attendanceDocRef = doc(db, 'classAttendance', `${classId}_${date}`);
-            const attendanceSnap = await getDoc(attendanceDocRef);
-            const existingRecords = attendanceSnap.exists() ? attendanceSnap.data().records : {};
-
-            listBody.innerHTML = '';
-            if (studentsSnap.empty) {
-                listBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-red-500">No students found in this class.</td></tr>';
                 return;
             }
 
-            studentsSnap.forEach(doc => {
-                const s = doc.data();
-                const status = existingRecords[doc.id] || 'Present'; // Default to Present
-                
-                const row = document.createElement('tr');
-                row.className = "hover:bg-gray-50";
-                row.innerHTML = `
-                    <td class="py-3 px-4">${s.rollNo}</td>
-                    <td class="py-3 px-4 font-medium">${s.name}</td>
-                    <td class="py-3 px-4 text-center">
-                        <div class="inline-flex rounded-md shadow-sm" role="group">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="status-${doc.id}" value="Present" class="peer sr-only" ${status === 'Present' ? 'checked' : ''}>
-                                <span class="px-3 py-1 bg-white border border-gray-300 rounded-l-lg text-sm peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-600 hover:bg-gray-100">P</span>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="status-${doc.id}" value="Absent" class="peer sr-only" ${status === 'Absent' ? 'checked' : ''}>
-                                <span class="px-3 py-1 bg-white border-t border-b border-gray-300 text-sm peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 hover:bg-gray-100">A</span>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="status-${doc.id}" value="Late" class="peer sr-only" ${status === 'Late' ? 'checked' : ''}>
-                                <span class="px-3 py-1 bg-white border border-gray-300 rounded-r-lg text-sm peer-checked:bg-yellow-500 peer-checked:text-white peer-checked:border-yellow-500 hover:bg-gray-100">L</span>
-                            </label>
-                        </div>
-                    </td>
-                `;
-                listBody.appendChild(row);
+            // Set Header Date
+            const today = new Date();
+            document.getElementById('header-date').textContent = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('sheet-date-display').textContent = today.toLocaleDateString();
+            document.getElementById('export-date').valueAsDate = today;
+
+            // Auth Check
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    initAttenderProfile(user);
+                    loadDashboardStats();
+                } else {
+                    window.location.href = 'login.html';
+                }
             });
         });
 
-        window.markAll = (status) => {
-            const radios = document.querySelectorAll(`input[type="radio"][value="${status}"]`);
-            radios.forEach(r => r.checked = true);
-        };
+        // --- PROFILE ---
+        function initAttenderProfile(user) {
+            // Mock profile data since Attender might not have a detailed doc yet
+            const name = user.email ? user.email.split('@')[0] : "Staff Member";
+            document.getElementById('user-name').textContent = name.charAt(0).toUpperCase() + name.slice(1);
+            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${name}&background=6366f1&color=fff`;
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
 
-        document.getElementById('save-attendance-btn').addEventListener('click', async () => {
-            const classId = document.getElementById('class-select').value;
-            const date = document.getElementById('attendance-date').value;
-            const btn = document.getElementById('save-attendance-btn');
+        // --- DASHBOARD LOGIC ---
+        async function loadDashboardStats() {
+            try {
+                // Total Students Count (Mock estimation for speed or query if small DB)
+                // For production with limited reads, better to have a metadata doc. 
+                // Here we'll do a simple count of the 'students' collection for the demo.
+                const stdSnap = await db.collection('students').get();
+                document.getElementById('stat-total-students').textContent = stdSnap.size;
 
-            if (!classId || !date) return;
+                // Today's Attendance Check
+                const todayStr = new Date().toISOString().split('T')[0];
+                const attSnap = await db.collection('attendance_history').where('date', '==', todayStr).get();
+                
+                let presentCount = 0;
+                let classesMarked = 0;
 
-            btn.disabled = true;
-            btn.textContent = "Saving...";
+                attSnap.forEach(doc => {
+                    classesMarked++;
+                    const data = doc.data();
+                    if(data.records) {
+                        presentCount += data.records.filter(r => r.status === 'Present').length;
+                    }
+                });
 
-            const records = {};
-            // Gather all radio inputs
-            const rows = document.getElementById('student-list-body').querySelectorAll('tr');
-            rows.forEach(row => {
-                const radio = row.querySelector('input[type="radio"]:checked');
-                if (radio) {
-                    const studentId = radio.name.replace('status-', '');
-                    records[studentId] = radio.value;
+                document.getElementById('stat-present-today').textContent = presentCount;
+                // Classes marked today (or total classes count if static)
+                document.getElementById('stat-classes-count').textContent = classesMarked; // Showing marked count for today
+
+                // Load Recent Logs
+                const logContainer = document.getElementById('recent-logs-list');
+                logContainer.innerHTML = '';
+                if(attSnap.empty) {
+                    logContainer.innerHTML = '<div class="p-6 text-center text-gray-400 text-sm">No attendance marked yet today.</div>';
+                } else {
+                    attSnap.forEach(doc => {
+                        const data = doc.data();
+                        const present = data.records.filter(r => r.status === 'Present').length;
+                        const total = data.records.length;
+                        logContainer.innerHTML += `
+                            <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+                                <div class="flex items-center">
+                                    <div class="bg-indigo-100 text-indigo-600 rounded-full h-8 w-8 flex items-center justify-center mr-3">
+                                        <i class="fas fa-clipboard-list text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-800">Class ${data.class} - ${data.section}</p>
+                                        <p class="text-xs text-gray-500">Marked by Attender</p>
+                                    </div>
+                                </div>
+                                <span class="text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded">${present}/${total} Present</span>
+                            </div>
+                        `;
+                    });
                 }
+
+            } catch (err) {
+                console.error("Stats Error", err);
+            }
+        }
+
+        // --- ATTENDANCE LOGIC ---
+        async function loadStudentsForAttendance() {
+            const cls = document.getElementById('att-class-select').value;
+            const sec = document.getElementById('att-section-select').value;
+            const container = document.getElementById('student-list-container');
+            const sheet = document.getElementById('attendance-sheet');
+
+            container.innerHTML = '<div class="p-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> Fetching Class List...</div>';
+            sheet.classList.remove('hidden');
+
+            try {
+                const snapshot = await db.collection('students')
+                    .where('class', '==', cls)
+                    .where('section', '==', sec)
+                    .orderBy('rollNo')
+                    .get();
+
+                container.innerHTML = '';
+                currentStudentsList = [];
+
+                if (snapshot.empty) {
+                    container.innerHTML = '<div class="p-8 text-center text-red-500">No students found in this class/section.</div>';
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const std = { id: doc.id, ...doc.data() };
+                    currentStudentsList.push(std);
+                    
+                    // Generate Row
+                    const rowId = `row-${std.id}`;
+                    container.innerHTML += `
+                        <div class="p-4 flex flex-col sm:flex-row items-center justify-between hover:bg-gray-50 transition" id="${rowId}">
+                            <div class="flex items-center w-full sm:w-1/3 mb-4 sm:mb-0">
+                                <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold mr-3">
+                                    ${std.rollNo ? std.rollNo.slice(-2) : '##'}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-800">${std.name}</p>
+                                    <p class="text-xs text-gray-500">Roll: ${std.rollNo}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-end space-x-2 w-full sm:w-2/3">
+                                <!-- Present Option -->
+                                <div class="relative">
+                                    <input type="radio" name="status-${std.id}" id="p-${std.id}" value="Present" class="attendance-radio sr-only" checked>
+                                    <label for="p-${std.id}" class="present cursor-pointer block px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all text-center min-w-[80px]">
+                                        Present
+                                    </label>
+                                </div>
+
+                                <!-- Absent Option -->
+                                <div class="relative">
+                                    <input type="radio" name="status-${std.id}" id="a-${std.id}" value="Absent" class="attendance-radio sr-only">
+                                    <label for="a-${std.id}" class="absent cursor-pointer block px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all text-center min-w-[80px]">
+                                        Absent
+                                    </label>
+                                </div>
+
+                                <!-- Leave Option -->
+                                <div class="relative">
+                                    <input type="radio" name="status-${std.id}" id="l-${std.id}" value="Leave" class="attendance-radio sr-only">
+                                    <label for="l-${std.id}" class="leave cursor-pointer block px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all text-center min-w-[80px]">
+                                        Leave
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = '<div class="p-8 text-center text-red-500">Error fetching data. Check permissions.</div>';
+            }
+        }
+
+        function markAll(status) {
+            currentStudentsList.forEach(std => {
+                const radioId = `${status.charAt(0).toLowerCase()}-${std.id}`;
+                const radio = document.getElementById(radioId);
+                if(radio) radio.checked = true;
+            });
+        }
+
+        async function saveAttendance() {
+            const btn = document.querySelector('button[onclick="saveAttendance()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+            btn.disabled = true;
+
+            const cls = document.getElementById('att-class-select').value;
+            const sec = document.getElementById('att-section-select').value;
+            const dateStr = new Date().toISOString().split('T')[0];
+            const docId = `${cls}_${sec}_${dateStr}`; // Unique ID for daily class record
+
+            const records = [];
+            currentStudentsList.forEach(std => {
+                const status = document.querySelector(`input[name="status-${std.id}"]:checked`).value;
+                records.push({
+                    studentId: std.id,
+                    name: std.name,
+                    rollNo: std.rollNo,
+                    status: status
+                });
             });
 
             try {
-                await setDoc(doc(db, 'classAttendance', `${classId}_${date}`), {
-                    classId: classId,
-                    date: date,
-                    records: records,
-                    updatedAt: new Date()
+                const batch = db.batch();
+
+                // 1. Save Permanent Log to 'attendance_history' collection
+                const historyRef = db.collection('attendance_history').doc(docId);
+                batch.set(historyRef, {
+                    class: cls,
+                    section: sec,
+                    date: dateStr,
+                    timestamp: new Date().toISOString(),
+                    markedBy: auth.currentUser.uid,
+                    records: records
                 });
-                alert('Attendance saved successfully!');
-            } catch (e) {
-                console.error(e);
-                alert('Error saving attendance.');
+
+                // 2. Update Individual Student Stats (Mock Calculation)
+                // In a real system, we'd query total days. Here we just increment counters if status is Present.
+                records.forEach(rec => {
+                    const stdRef = db.collection('students').doc(rec.studentId);
+                    
+                    // Firestore Increment
+                    if (rec.status === 'Present') {
+                        // Assuming we have fields 'daysPresent' and 'totalDays'
+                        // If they don't exist, this will create them with value 1
+                        // We also update 'attendance' % (Approximate for demo)
+                        // Note: Accurate % requires read-before-write or cloud function. 
+                        // For this UI-only demo, we'll just set attendance to a random high number or 
+                        // try to read previous. Let's just do a simple log update for now to be safe.
+                        batch.update(stdRef, {
+                           lastAttendance: dateStr,
+                           attendanceStatus: 'Present'
+                           // In a complex app, use Cloud Functions to recalculate %
+                        });
+                    }
+                });
+
+                await batch.commit();
+
+                alert("Attendance Saved Successfully!");
+                showSection('dashboard');
+                loadDashboardStats(); // Refresh stats
+
+            } catch (err) {
+                console.error("Save failed", err);
+                alert("Failed to save attendance. Please try again.");
             } finally {
+                btn.innerHTML = originalText;
                 btn.disabled = false;
-                btn.textContent = "Save Attendance";
             }
-        });
+        }
 
-        document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
-        document.getElementById('sidebar-toggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('hidden-mobile'));
+        // --- EXPORT LOGIC ---
+        async function downloadCSV() {
+            const date = document.getElementById('export-date').value;
+            const cls = document.getElementById('export-class').value;
+            const sec = document.getElementById('export-section').value;
 
+            if(!date) { alert("Please select a date."); return; }
+
+            const docId = `${cls}_${sec}_${date}`;
+            
+            try {
+                const doc = await db.collection('attendance_history').doc(docId).get();
+                
+                if(!doc.exists) {
+                    alert("No attendance record found for this date and class.");
+                    return;
+                }
+
+                const data = doc.data();
+                const records = data.records;
+
+                // Create CSV Content
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "Roll No,Student Name,Date,Status,Class\n"; // Header
+
+                records.forEach(row => {
+                    csvContent += `${row.rollNo},${row.name},${date},${row.status},${cls}-${sec}\n`;
+                });
+
+                // Trigger Download
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `Attendance_${cls}_${sec}_${date}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+            } catch (err) {
+                console.error(err);
+                alert("Error generating report.");
+            }
+        }
+
+        // --- NAVIGATION ---
+        window.showSection = function(id) {
+            document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            
+            // Sidebar Active State
+            const btns = document.querySelectorAll('.nav-btn');
+            btns.forEach(b => {
+                b.classList.remove('bg-indigo-50', 'text-indigo-700');
+                b.classList.add('text-gray-600', 'hover:bg-gray-50');
+            });
+            
+            const index = ['dashboard', 'mark-attendance', 'reports'].indexOf(id);
+            if(index !== -1) {
+                btns[index].classList.remove('text-gray-600', 'hover:bg-gray-50');
+                btns[index].classList.add('bg-indigo-50', 'text-indigo-700');
+            }
+        }
+
+        window.logout = function() {
+            auth.signOut().then(() => {
+                localStorage.removeItem('grace_user_session');
+                window.location.href = 'login.html';
+            });
+        }
     </script>
 </body>
 </html>
