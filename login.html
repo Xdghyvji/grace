@@ -3,27 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Login System</title>
+    <title>Login - The Grace Academy</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
     <style>
-        /* Smooth transitions for view switching */
-        .view-section {
-            display: none;
+        body { font-family: 'Inter', sans-serif; }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .slide-up {
+            animation: slideUp 0.6s ease-out forwards;
             opacity: 0;
-            transition: opacity 0.3s ease-in-out;
+            transform: translateY(30px);
         }
-        .view-section.active {
-            display: block;
-            opacity: 1;
+        @keyframes slideUp {
+            to { opacity: 1; transform: translateY(0); }
         }
+        /* Loading Spinner */
         .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            border: 3px solid rgba(255,255,255,0.3);
             border-radius: 50%;
-            border-top: 3px solid #3b82f6;
-            width: 24px;
-            height: 24px;
-            -webkit-animation: spin 1s linear infinite; /* Safari */
+            border-top: 3px solid #ffffff;
+            width: 20px;
+            height: 20px;
+            -webkit-animation: spin 1s linear infinite;
             animation: spin 1s linear infinite;
         }
         @keyframes spin {
@@ -32,490 +42,259 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col">
+<body class="bg-gray-50 h-screen flex flex-col overflow-hidden">
 
-    <!-- Navbar (Hidden on Login) -->
-    <nav id="navbar" class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex justify-between items-center hidden sticky top-0 z-50">
-        <div class="flex items-center space-x-2">
-            <i class="fas fa-shield-alt text-blue-600 text-xl"></i>
-            <span class="text-xl font-bold text-gray-800">SecureApp</span>
-        </div>
-        <div class="flex items-center space-x-6">
-            <div class="text-right hidden sm:block">
-                <div id="nav-user-email" class="text-sm font-medium text-gray-900">user@example.com</div>
-                <div id="nav-user-role" class="text-xs text-gray-500 uppercase tracking-wider font-semibold">ROLE</div>
-            </div>
-            <div class="h-9 w-9 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold border-2 border-white shadow-sm" id="nav-avatar">
-                U
-            </div>
-            <button onclick="handleLogout()" class="text-gray-500 hover:text-red-600 transition-colors p-2 hover:bg-gray-100 rounded-full" title="Sign Out">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
-        </div>
+    <div class="absolute inset-0 z-0">
+        <div class="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-r from-blue-700 to-blue-900 rounded-b-[50px] lg:rounded-b-[100px]"></div>
+    </div>
+
+    <nav class="relative z-10 container mx-auto px-6 py-6 flex justify-between items-center">
+        <a href="index.html" class="flex items-center space-x-3 text-white hover:text-blue-100 transition">
+            <i class="fas fa-arrow-left"></i>
+            <span class="font-medium">Back to Home</span>
+        </a>
     </nav>
 
-    <!-- Main Container -->
-    <main class="flex-grow relative w-full">
-        
-        <!-- LOADING VIEW -->
-        <div id="view-loading" class="view-section active flex items-center justify-center h-screen bg-white absolute inset-0 z-50">
-            <div class="flex flex-col items-center">
-                <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-                <p class="text-gray-500 font-medium">Verifying credentials...</p>
-            </div>
-        </div>
-
-        <!-- AUTH VIEW (Login/Signup) -->
-        <div id="view-auth" class="view-section min-h-screen flex items-center justify-center p-4">
-            <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
-                <!-- Header -->
-                <div class="bg-blue-600 px-8 py-6 text-white text-center">
-                    <div class="inline-flex p-3 bg-blue-500 rounded-full mb-3 shadow-inner">
-                        <i class="fas fa-shield-alt text-2xl"></i>
-                    </div>
-                    <h1 id="auth-title" class="text-2xl font-bold">Welcome Back</h1>
-                    <p id="auth-subtitle" class="text-blue-100 mt-2 text-sm">Sign in to access your dashboard</p>
+    <main class="relative z-10 flex-grow flex items-center justify-center px-4">
+        <div class="w-full max-w-md slide-up">
+            <div class="glass-effect rounded-2xl shadow-2xl overflow-hidden border border-white/20">
+                
+                <div class="bg-white p-8 pb-0 text-center">
+                    <img src="download (2).png" alt="The Grace Academy" class="h-16 w-16 mx-auto rounded-full shadow-md mb-4">
+                    <h2 class="text-3xl font-bold text-blue-900">Welcome Back</h2>
+                    <p class="text-gray-500 mt-2">Sign in to access your portal</p>
                 </div>
 
-                <!-- Form -->
                 <div class="p-8">
-                    <div id="auth-error" class="hidden mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-start">
-                        <i class="fas fa-exclamation-circle mt-1 mr-2"></i>
-                        <span id="auth-error-text">Error message</span>
-                    </div>
-
-                    <form id="auth-form" class="space-y-5">
+                    <form id="loginForm" class="space-y-6">
+                        
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                            <label for="role" class="block text-sm font-medium text-gray-700 mb-2">I am a</label>
                             <div class="relative">
-                                <i class="fas fa-envelope absolute left-3 top-3 text-gray-400"></i>
-                                <input type="email" id="email" required class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition outline-none" placeholder="you@example.com">
+                                <select id="role" name="role" class="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 appearance-none bg-gray-50 transition-colors cursor-pointer">
+                                    <option value="student">Student</option>
+                                    <option value="teacher">Teacher</option>
+                                    <option value="attender">Attender</option>
+                                    <option value="admin">Administrator</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600">
+                                    <i class="fas fa-user-tag"></i>
+                                </div>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
+                                    <i class="fas fa-chevron-down text-xs"></i>
+                                </div>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                             <div class="relative">
-                                <i class="fas fa-lock absolute left-3 top-3 text-gray-400"></i>
-                                <input type="password" id="password" required minlength="6" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition outline-none" placeholder="••••••••">
+                                <input type="email" id="email" name="email" required 
+                                    class="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50 placeholder-gray-400 transition-shadow"
+                                    placeholder="name@example.com">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
                             </div>
                         </div>
 
-                        <button type="submit" id="auth-submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition duration-200 flex items-center justify-center shadow-md hover:shadow-lg">
-                            <span id="auth-btn-text">Sign In</span>
-                            <i class="fas fa-arrow-right ml-2"></i>
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                                <a href="#" class="text-sm text-blue-600 hover:text-blue-800 hover:underline">Forgot password?</a>
+                            </div>
+                            <div class="relative">
+                                <input type="password" id="password" name="password" required 
+                                    class="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50 placeholder-gray-400 transition-shadow"
+                                    placeholder="••••••••">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                    <i class="fas fa-lock"></i>
+                                </div>
+                                <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 cursor-pointer focus:outline-none">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="errorMessage" class="hidden flex items-start p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50" role="alert">
+                            <i class="fas fa-exclamation-circle mt-1 mr-2"></i>
+                            <div>
+                                <span class="font-medium">Authentication Failed!</span>
+                                <div id="errorText" class="mt-1">Invalid credentials.</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="loginBtn" class="w-full flex justify-center items-center bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-300 transition duration-300 shadow-lg transform hover:-translate-y-0.5">
+                            <span id="btnText">Sign In</span>
+                            <div id="btnSpinner" class="spinner ml-2 hidden"></div>
                         </button>
                     </form>
+                </div>
 
-                    <div class="mt-6 text-center">
-                        <p class="text-gray-600 text-sm">
-                            <span id="auth-switch-text">Don't have an account?</span>
-                            <button id="auth-switch-btn" class="text-blue-600 font-semibold hover:underline">Sign Up</button>
-                        </p>
-                    </div>
+                <div class="bg-gray-50 px-8 py-4 border-t border-gray-200 text-center">
+                    <p class="text-sm text-gray-600">
+                        Don't have an account? 
+                        <a href="#contact" class="font-medium text-blue-700 hover:text-blue-900">Contact Administration</a>
+                    </p>
                 </div>
             </div>
+            
+            <p class="text-center text-gray-500 text-xs mt-6">
+                &copy; <span id="year"></span> The Grace Academy. All rights reserved.
+            </p>
         </div>
-
-        <!-- DASHBOARD VIEW -->
-        <div id="view-dashboard" class="view-section p-8 max-w-4xl mx-auto hidden">
-            <!-- Navigation Tabs -->
-            <div class="flex space-x-1 bg-gray-200 p-1 rounded-lg inline-flex mb-8">
-                <button onclick="switchTab('dashboard')" class="tab-btn px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 bg-white shadow text-gray-900" id="tab-dashboard">
-                    Dashboard (Public)
-                </button>
-                <button onclick="switchTab('admin')" class="tab-btn px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 text-gray-600 hover:text-gray-900 hover:bg-gray-200/50" id="tab-admin">
-                    Admin Panel (Protected)
-                </button>
-            </div>
-
-            <!-- Dashboard Content -->
-            <div id="content-dashboard">
-                <h1 class="text-3xl font-bold text-gray-900 mb-6">User Dashboard</h1>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Status Card -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-user text-blue-500 mr-2"></i>
-                            Profile Status
-                        </h2>
-                        <div class="space-y-3">
-                            <div class="flex justify-between p-3 bg-gray-50 rounded-lg">
-                                <span class="text-gray-600">Role</span>
-                                <span id="dash-role" class="font-mono font-bold text-green-600">USER</span>
-                            </div>
-                            <div class="flex justify-between p-3 bg-gray-50 rounded-lg">
-                                <span class="text-gray-600">Email</span>
-                                <span id="dash-email" class="text-gray-900 font-medium text-sm">...</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Actions Card -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                            Role Management
-                        </h2>
-                        <p class="text-sm text-gray-500 mb-6">
-                            Simulate role changes to test the security guards instantly.
-                        </p>
-                        <div class="space-y-3">
-                            <button onclick="updateUserRole('admin')" id="btn-make-admin" class="w-full py-2 px-4 rounded font-medium transition bg-purple-600 text-white hover:bg-purple-700 shadow-sm hover:shadow">
-                                Simulate: Become Admin
-                            </button>
-                            <button onclick="updateUserRole('user')" id="btn-make-user" class="w-full py-2 px-4 rounded font-medium transition bg-gray-200 text-gray-800 hover:bg-gray-300 shadow-sm hover:shadow">
-                                Simulate: Become User
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Admin Content (Protected) -->
-            <div id="content-admin" class="hidden">
-                <div id="admin-access-granted" class="hidden">
-                    <div class="bg-gradient-to-br from-purple-900 to-indigo-900 text-white rounded-2xl p-8 shadow-xl">
-                        <div class="flex items-center mb-6">
-                            <div class="bg-white/10 p-3 rounded-lg mr-4">
-                                <i class="fas fa-shield-alt text-3xl text-purple-300"></i>
-                            </div>
-                            <div>
-                                <h1 class="text-3xl font-bold">Admin Headquarters</h1>
-                                <p class="text-purple-200">Restricted Access • Clearance Level 5</p>
-                            </div>
-                        </div>
-                        <div class="bg-white/5 p-6 rounded-lg border border-white/10 backdrop-blur-sm">
-                            <p class="text-lg leading-relaxed text-purple-100">
-                                If you are seeing this, the <code class="bg-black/30 px-2 py-1 rounded font-mono text-purple-300">RoleGuard</code> has successfully verified 
-                                your role as <strong>ADMIN</strong> in the Firestore database.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="admin-access-denied" class="hidden">
-                    <div class="flex flex-col items-center justify-center py-12 px-4">
-                        <i class="fas fa-shield-alt text-6xl text-orange-500 mb-4"></i>
-                        <h1 class="text-2xl font-bold text-gray-900">Permission Denied</h1>
-                        <p class="text-gray-600 mt-2 text-center max-w-md">
-                            Your current role does not have permission to access this resource. 
-                            Required roles: <strong>admin</strong>.
-                        </p>
-                        <button onclick="switchTab('dashboard')" class="mt-6 text-blue-600 hover:underline">Return to Dashboard</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </main>
 
-    <!-- FIREBASE & APP LOGIC -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { 
-            getAuth, 
-            onAuthStateChanged, 
-            signInWithEmailAndPassword, 
-            createUserWithEmailAndPassword, 
-            signOut,
-            signInWithCustomToken
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { 
-            getFirestore, 
-            doc, 
-            setDoc, 
-            onSnapshot, 
-            serverTimestamp 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- Config & Init ---
-        // In a real file, you would put your actual config object here
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // --- State ---
-        let currentUser = null;
-        let userProfile = null;
-        let unsubscribeProfile = null;
-        let isLoginMode = true;
-
-        // --- UI References ---
-        const views = {
-            loading: document.getElementById('view-loading'),
-            auth: document.getElementById('view-auth'),
-            dashboard: document.getElementById('view-dashboard')
+    <script>
+        // --- FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDrOEtaX7Hhp248bI8oQiMTiGCbK2QdMho",
+            authDomain: "sultania-3e5ca.firebaseapp.com",
+            projectId: "sultania-3e5ca",
+            storageBucket: "sultania-3e5ca.firebasestorage.app",
+            messagingSenderId: "429093155759",
+            appId: "1:429093155759:web:76224bef015291ba83355a",
+            measurementId: "G-KBDE0PLY8R"
         };
-        const navbar = document.getElementById('navbar');
-        const authForm = document.getElementById('auth-form');
-        const authError = document.getElementById('auth-error');
-        const authErrorText = document.getElementById('auth-error-text');
 
-        // --- Functions ---
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-        function showView(viewName) {
-            Object.values(views).forEach(el => {
-                el.classList.remove('active');
-                setTimeout(() => {
-                    if(!el.classList.contains('active')) el.style.display = 'none';
-                }, 300); // match transition duration
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set Year
+            document.getElementById('year').textContent = new Date().getFullYear();
+
+            // Toggle Password Visibility
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+
+            togglePassword.addEventListener('click', function () {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.querySelector('i').classList.toggle('fa-eye');
+                this.querySelector('i').classList.toggle('fa-eye-slash');
             });
-            
-            const target = views[viewName];
-            target.style.display = viewName === 'dashboard' ? 'block' : 'flex'; // maintain flex for centering
-            
-            // Force reflow
-            void target.offsetWidth; 
-            target.classList.add('active');
 
-            if (viewName === 'dashboard') {
-                navbar.classList.remove('hidden');
-            } else {
-                navbar.classList.add('hidden');
-            }
-        }
+            // Handle Login Logic
+            const loginForm = document.getElementById('loginForm');
+            const loginBtn = document.getElementById('loginBtn');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
 
-        function updateDashboardUI() {
-            if (!userProfile) return;
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
 
-            // Update Nav
-            document.getElementById('nav-user-email').textContent = userProfile.email;
-            document.getElementById('nav-user-role').textContent = userProfile.role;
-            document.getElementById('nav-avatar').textContent = (userProfile.role || 'U')[0].toUpperCase();
-
-            // Update Dashboard
-            const roleEl = document.getElementById('dash-role');
-            roleEl.textContent = userProfile.role.toUpperCase();
-            roleEl.className = `font-mono font-bold ${userProfile.role === 'admin' ? 'text-purple-600' : 'text-green-600'}`;
-            
-            document.getElementById('dash-email').textContent = userProfile.email;
-
-            // Update Buttons State
-            const btnAdmin = document.getElementById('btn-make-admin');
-            const btnUser = document.getElementById('btn-make-user');
-
-            if (userProfile.role === 'admin') {
-                btnAdmin.disabled = true;
-                btnAdmin.classList.add('opacity-50', 'cursor-not-allowed');
-                btnUser.disabled = false;
-                btnUser.classList.remove('opacity-50', 'cursor-not-allowed');
+                // Reset Error
+                errorMessage.classList.add('hidden');
                 
-                // If currently viewing admin tab, refresh it
-                if (!document.getElementById('content-admin').classList.contains('hidden')) {
-                    document.getElementById('admin-access-granted').classList.remove('hidden');
-                    document.getElementById('admin-access-denied').classList.add('hidden');
-                }
-            } else {
-                btnAdmin.disabled = false;
-                btnAdmin.classList.remove('opacity-50', 'cursor-not-allowed');
-                btnUser.disabled = true;
-                btnUser.classList.add('opacity-50', 'cursor-not-allowed');
+                // Get Values
+                const role = document.getElementById('role').value;
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
 
-                // If currently viewing admin tab, refresh it
-                if (!document.getElementById('content-admin').classList.contains('hidden')) {
-                    document.getElementById('admin-access-granted').classList.add('hidden');
-                    document.getElementById('admin-access-denied').classList.remove('hidden');
-                }
-            }
-        }
-
-        // --- Event Listeners ---
-
-        window.handleLogout = async () => {
-            try {
-                await signOut(auth);
-                // Auth listener handles the redirect
-            } catch (error) {
-                console.error("Logout Error:", error);
-            }
-        };
-
-        window.switchTab = (tab) => {
-            const dashContent = document.getElementById('content-dashboard');
-            const adminContent = document.getElementById('content-admin');
-            const tabDash = document.getElementById('tab-dashboard');
-            const tabAdmin = document.getElementById('tab-admin');
-
-            if (tab === 'dashboard') {
-                dashContent.classList.remove('hidden');
-                adminContent.classList.add('hidden');
-                
-                tabDash.classList.add('bg-white', 'shadow', 'text-gray-900');
-                tabDash.classList.remove('text-gray-600');
-                
-                tabAdmin.classList.remove('bg-white', 'shadow', 'text-gray-900');
-                tabAdmin.classList.add('text-gray-600');
-            } else {
-                dashContent.classList.add('hidden');
-                adminContent.classList.remove('hidden');
-
-                tabAdmin.classList.add('bg-white', 'shadow', 'text-gray-900');
-                tabAdmin.classList.remove('text-gray-600');
-
-                tabDash.classList.remove('bg-white', 'shadow', 'text-gray-900');
-                tabDash.classList.add('text-gray-600');
-
-                // Check Role immediately
-                if (userProfile?.role === 'admin') {
-                    document.getElementById('admin-access-granted').classList.remove('hidden');
-                    document.getElementById('admin-access-denied').classList.add('hidden');
-                } else {
-                    document.getElementById('admin-access-granted').classList.add('hidden');
-                    document.getElementById('admin-access-denied').classList.remove('hidden');
-                }
-            }
-        };
-
-        window.updateUserRole = async (newRole) => {
-            if (!currentUser || !userProfile) return;
-            const userRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'main');
-            try {
-                await setDoc(userRef, { ...userProfile, role: newRole }, { merge: true });
-                // Snapshot listener will update UI automatically
-            } catch (err) {
-                alert("Error updating role: " + err.message);
-            }
-        };
-
-        // --- Login Form Logic ---
-
-        const switchBtn = document.getElementById('auth-switch-btn');
-        switchBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            isLoginMode = !isLoginMode;
-            
-            const title = document.getElementById('auth-title');
-            const subtitle = document.getElementById('auth-subtitle');
-            const btnText = document.getElementById('auth-btn-text');
-            const switchText = document.getElementById('auth-switch-text');
-            
-            if (isLoginMode) {
-                title.textContent = 'Welcome Back';
-                subtitle.textContent = 'Sign in to access your dashboard';
-                btnText.textContent = 'Sign In';
-                switchText.textContent = "Don't have an account?";
-                switchBtn.textContent = 'Sign Up';
-            } else {
-                title.textContent = 'Create Account';
-                subtitle.textContent = 'Get started with SecureApp today';
-                btnText.textContent = 'Create Account';
-                switchText.textContent = "Already have an account?";
-                switchBtn.textContent = 'Log In';
-            }
-            authError.classList.add('hidden');
-        });
-
-        authForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const btn = document.getElementById('auth-submit-btn');
-            
-            authError.classList.add('hidden');
-            btn.disabled = true;
-            btn.innerHTML = '<div class="spinner border-white"></div>';
-
-            try {
-                if (isLoginMode) {
-                    await signInWithEmailAndPassword(auth, email, password);
-                } else {
-                    await createUserWithEmailAndPassword(auth, email, password);
-                }
-                // Success: Auth listener handles redirect
-            } catch (error) {
-                console.error("Auth Error:", error);
-                let msg = "Authentication failed";
-                if (error.code === 'auth/invalid-credential') msg = "Invalid email or password";
-                else if (error.code === 'auth/email-already-in-use') msg = "Email already in use";
-                else if (error.code === 'auth/weak-password') msg = "Password should be at least 6 characters";
-                
-                authErrorText.textContent = msg;
-                authError.classList.remove('hidden');
-                
-                // Reset button
-                btn.disabled = false;
-                btn.innerHTML = `<span id="auth-btn-text">${isLoginMode ? 'Sign In' : 'Create Account'}</span><i class="fas fa-arrow-right ml-2"></i>`;
-            }
-        });
-
-        // --- Core Logic: Auth & Data Sync ---
-
-        async function init() {
-            // Check for custom token (Dev environment specific)
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                try {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } catch (e) {
-                    console.log("Custom token auth failed or already signed in");
-                }
-            }
-
-            onAuthStateChanged(auth, (user) => {
-                if (unsubscribeProfile) {
-                    unsubscribeProfile();
-                    unsubscribeProfile = null;
+                // Validate Inputs Client-side
+                if(!email || !password) {
+                    showError("Please enter both email and password.");
+                    return;
                 }
 
-                if (user) {
-                    currentUser = user;
-                    
-                    // 1. Setup Realtime Listener for Profile
-                    const userRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'main');
-                    
-                    unsubscribeProfile = onSnapshot(userRef, async (snap) => {
-                        if (snap.exists()) {
-                            // 2. Profile Found -> Update App State
-                            userProfile = snap.data();
-                            updateDashboardUI();
-                            
-                            // 3. If we were loading or on auth screen, go to dashboard
-                            if (views.loading.style.display !== 'none' || views.auth.style.display !== 'none') {
-                                showView('dashboard');
-                            }
-                        } else {
-                            // 4. Self-Healing: Profile Missing -> Create It
-                            console.log("Profile missing, creating default...");
-                            const newProfile = {
-                                uid: user.uid,
-                                role: 'user',
-                                email: user.email,
-                                createdAt: serverTimestamp(),
-                                lastLogin: serverTimestamp()
-                            };
-                            try {
-                                await setDoc(userRef, newProfile);
-                                // The snapshot will fire again immediately after this
-                            } catch (err) {
-                                console.error("Failed to create profile:", err);
-                                alert("System Error: Could not initialize user profile.");
+                // UI Loading State
+                loginBtn.disabled = true;
+                loginBtn.classList.add('cursor-not-allowed', 'opacity-75');
+                btnText.textContent = 'Authenticating...';
+                btnSpinner.classList.remove('hidden');
+
+                // --- FIREBASE AUTHENTICATION ---
+                auth.signInWithEmailAndPassword(email, password)
+                    .then((userCredential) => {
+                        // Signed in 
+                        const user = userCredential.user;
+                        console.log("Logged in as:", user.email);
+
+                        // --- ROLE VALIDATION LOGIC ---
+                        
+                        // 1. Admin Strict Check
+                        if (role === 'admin') {
+                            if (user.email.toLowerCase() !== 'admin@grace.com') {
+                                throw new Error("Access Denied: You are not authorized as Administrator.");
                             }
                         }
-                    }, (error) => {
-                        console.error("Snapshot Error:", error);
-                        // If permission denied, likely role issue or not logged in yet
+
+                        // 2. Prepare Session Data
+                        // In a full production app, we would look up the user's role in Firestore here.
+                        // For now, we trust the successful login + role selection (except for admin).
+                        const sessionData = {
+                            uid: user.uid,
+                            email: user.email,
+                            role: role,
+                            isLoggedIn: true,
+                            token: user.refreshToken, // Simplified token storage
+                            loginTime: new Date().toISOString()
+                        };
+
+                        // Store in LocalStorage
+                        localStorage.setItem('grace_user_session', JSON.stringify(sessionData));
+
+                        // 3. Redirect based on Role
+                        let redirectUrl = 'index.html';
+                        switch(role) {
+                            case 'admin':
+                                redirectUrl = 'admin_dashboard.html';
+                                break;
+                            case 'student':
+                                redirectUrl = 'student.html';
+                                break;
+                            case 'teacher':
+                                redirectUrl = 'teacher_dashboard.html';
+                                break;
+                            case 'attender':
+                                redirectUrl = 'attender_dashboard.html';
+                                break;
+                        }
+
+                        window.location.href = redirectUrl;
+                    })
+                    .catch((error) => {
+                        const errorCode = error.code;
+                        const errorMsg = error.message;
+                        
+                        // Parse Firebase errors for better user experience
+                        let displayMsg = "An error occurred. Please try again.";
+                        if (errorCode === 'auth/wrong-password') {
+                            displayMsg = "Incorrect password. Please try again.";
+                        } else if (errorCode === 'auth/user-not-found') {
+                            displayMsg = "No account found with this email.";
+                        } else if (errorCode === 'auth/invalid-email') {
+                            displayMsg = "The email address is badly formatted.";
+                        } else if (errorCode === 'auth/too-many-requests') {
+                            displayMsg = "Too many failed attempts. Please try again later.";
+                        } else if (error.message.includes("Access Denied")) {
+                            displayMsg = error.message; // Custom admin error
+                            // Sign out if admin check failed
+                            auth.signOut();
+                        }
+
+                        showError(displayMsg);
+                        resetButton();
                     });
-
-                } else {
-                    // No User -> Show Auth Screen
-                    currentUser = null;
-                    userProfile = null;
-                    showView('auth');
-                    
-                    // Reset Button State if coming from logout
-                    const btn = document.getElementById('auth-submit-btn');
-                    btn.disabled = false;
-                    btn.innerHTML = `<span id="auth-btn-text">${isLoginMode ? 'Sign In' : 'Create Account'}</span><i class="fas fa-arrow-right ml-2"></i>`;
-                }
             });
-        }
 
-        // Start
-        init();
+            function showError(msg) {
+                errorText.textContent = msg;
+                errorMessage.classList.remove('hidden');
+            }
 
+            function resetButton() {
+                loginBtn.disabled = false;
+                loginBtn.classList.remove('cursor-not-allowed', 'opacity-75');
+                btnText.textContent = 'Sign In';
+                btnSpinner.classList.add('hidden');
+            }
+        });
     </script>
 </body>
 </html>
