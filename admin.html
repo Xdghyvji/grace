@@ -43,7 +43,16 @@
         @media print {
             body * { visibility: hidden; }
             #printable-area, #printable-area * { visibility: visible; }
-            #printable-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white; z-index: 9999; }
+            #printable-area { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                height: 100%; 
+                padding: 40px; 
+                background: white; 
+                z-index: 9999; 
+            }
             .no-print { display: none !important; }
         }
     </style>
@@ -372,41 +381,85 @@
     </div>
 
     <!-- HIDDEN PRINTABLE RECEIPT -->
-    <div id="printable-area" class="hidden bg-white p-8">
-        <div class="border-b-2 border-gray-800 pb-4 mb-6 flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-bold text-slate-800">The Grace Academy</h1>
-                <p>Paigah Dera Ghazi Khan</p>
-                <p>Phone: 0336-2268687</p>
-            </div>
-            <div class="text-right">
-                <h2 class="text-2xl font-bold uppercase text-gray-500">Receipt</h2>
-                <p>Date: <span id="print-date"></span></p>
-                <p>Ref: <span id="print-ref"></span></p>
+    <div id="printable-area" class="hidden bg-white p-8 font-serif">
+        <div class="border-b-2 border-gray-800 pb-4 mb-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <img src="download (2).png" alt="Logo" class="h-24 w-24 object-contain">
+                    <div>
+                        <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">The Grace Academy</h1>
+                        <p class="text-lg text-slate-700">Paigah Dera Ghazi Khan</p>
+                        <p class="text-sm text-slate-600">Phone: 0336-2268687 | Web: https://thegraceacedmy.online</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <h2 class="text-3xl font-bold uppercase text-slate-400">Fee Receipt</h2>
+                    <p class="text-lg font-mono font-bold text-slate-800 mt-2">Ref: <span id="print-ref"></span></p>
+                    <p class="text-sm text-slate-600">Date: <span id="print-date"></span></p>
+                </div>
             </div>
         </div>
-        <div class="mb-6">
-            <p><strong>Student:</strong> <span id="print-name"></span></p>
-            <p><strong>Roll No:</strong> <span id="print-roll"></span></p>
-            <p><strong>Class:</strong> <span id="print-class"></span></p>
+
+        <div class="grid grid-cols-2 gap-6 mb-6 text-sm">
+            <div class="space-y-2">
+                <div class="flex border-b border-gray-300 pb-1">
+                    <span class="font-bold w-32">Student Name:</span>
+                    <span id="print-name" class="flex-1 font-medium"></span>
+                </div>
+                <div class="flex border-b border-gray-300 pb-1">
+                    <span class="font-bold w-32">Father's Name:</span>
+                    <span id="print-father" class="flex-1 font-medium"></span>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <div class="flex border-b border-gray-300 pb-1">
+                    <span class="font-bold w-32">Roll Number:</span>
+                    <span id="print-roll" class="flex-1 font-medium"></span>
+                </div>
+                <div class="flex border-b border-gray-300 pb-1">
+                    <span class="font-bold w-32">Class / Section:</span>
+                    <span id="print-class" class="flex-1 font-medium"></span>
+                </div>
+            </div>
         </div>
-        <table class="w-full border border-gray-800 mb-8">
-            <tr class="bg-gray-100">
-                <th class="border p-2 text-left">Description</th>
-                <th class="border p-2 text-right">Amount</th>
-            </tr>
-            <tr>
-                <td class="border p-2" id="print-desc"></td>
-                <td class="border p-2 text-right" id="print-amount"></td>
-            </tr>
-            <tr class="font-bold">
-                <td class="border p-2 text-right">Total Received</td>
-                <td class="border p-2 text-right" id="print-total"></td>
-            </tr>
+
+        <table class="w-full border-collapse border border-gray-800 mb-8">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="border border-gray-800 p-3 text-left w-3/4">Description</th>
+                    <th class="border border-gray-800 p-3 text-right">Amount (PKR)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="border border-gray-800 p-3" id="print-desc"></td>
+                    <td class="border border-gray-800 p-3 text-right font-mono" id="print-amount"></td>
+                </tr>
+                <!-- Spacer rows to make receipt look official -->
+                <tr><td class="border border-gray-800 p-3">&nbsp;</td><td class="border border-gray-800 p-3"></td></tr>
+            </tbody>
+            <tfoot>
+                <tr class="font-bold bg-gray-50">
+                    <td class="border border-gray-800 p-3 text-right uppercase">Total Amount Received</td>
+                    <td class="border border-gray-800 p-3 text-right text-lg" id="print-total"></td>
+                </tr>
+            </tfoot>
         </table>
-        <div class="mt-12 flex justify-between">
-            <div class="text-center border-t border-gray-400 pt-2 w-40">Admin Signature</div>
-            <div class="text-center border-t border-gray-400 pt-2 w-40">Student Copy</div>
+
+        <div class="mt-16 flex justify-between items-end">
+            <div class="text-center">
+                <div class="border-t-2 border-gray-400 w-48 mx-auto mb-2"></div>
+                <p class="font-bold text-sm">Accountant / Admin Signature</p>
+            </div>
+            <div class="text-center">
+                <div class="border-t-2 border-gray-400 w-48 mx-auto mb-2"></div>
+                <p class="font-bold text-sm">Parent / Student Signature</p>
+            </div>
+        </div>
+        
+        <div class="mt-8 text-center text-xs text-gray-400 border-t border-gray-200 pt-2">
+            <p>This is a computer-generated receipt. Errors & Omissions Excepted.</p>
+            <p>https://thegraceacedmy.online</p>
         </div>
     </div>
 
@@ -712,6 +765,7 @@
                 document.getElementById('print-date').innerText = dateStr;
                 document.getElementById('print-ref').innerText = refId;
                 document.getElementById('print-name').innerText = student.name;
+                document.getElementById('print-father').innerText = student.fatherName || 'N/A';
                 document.getElementById('print-roll').innerText = student.rollNo;
                 document.getElementById('print-class').innerText = `${student.class} - ${student.section}`;
                 document.getElementById('print-desc').innerText = desc;
