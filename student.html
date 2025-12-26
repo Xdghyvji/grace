@@ -3,600 +3,762 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Grace Academy - Student Portal</title>
+    <title>Student Portal - The Grace Academy</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-        .sidebar { transition: transform 0.3s ease-in-out; }
-        .sidebar.hidden-mobile { transform: translateX(-100%); }
-        @media (min-width: 1024px) { .sidebar.hidden-mobile { transform: translateX(0); } }
-        .fade-in { animation: fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
-        .loader { border: 8px solid #f3f3f3; border-top: 8px solid #10B981; border-radius: 50%; width: 60px; height: 60px; animation: spin 2s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .active-link { background-color: #047857; color: white; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         
-        /* Custom Modal Styles */
-        .modal-backdrop { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
-        .modal-backdrop.visible { opacity: 1; visibility: visible; }
-        .modal-content { background: white; padding: 2rem; border-radius: 0.5rem; max-width: 500px; width: 90%; transform: scale(0.95); transition: transform 0.3s; }
-        .modal-backdrop.visible .modal-content { transform: scale(1); }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Sidebar Transition */
+        .sidebar { transition: all 0.3s ease-in-out; }
+        
+        /* Print Styles for Receipt */
+        @media print {
+            body * { visibility: hidden; }
+            #receipt-print-area, #receipt-print-area * { visibility: visible; }
+            #receipt-print-area { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                padding: 20px;
+                background: white;
+            }
+            .no-print { display: none !important; }
+        }
+
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="font-sans antialiased text-gray-800 bg-gray-50 flex min-h-screen">
+<body class="flex h-screen overflow-hidden">
 
-    <div id="loading-overlay">
-        <div class="loader"></div>
-        <p id="loading-text" class="mt-4 text-lg text-gray-700">Loading Student Portal...</p>
-    </div>
-
-    <aside id="sidebar" class="sidebar bg-gradient-to-br from-green-700 to-green-900 text-white w-64 p-6 space-y-6 flex flex-col hidden-mobile fixed inset-y-0 left-0 lg:relative lg:translate-x-0 z-40 shadow-lg"></aside>
-
-    <div class="flex-1 flex flex-col">
-        <header class="bg-white shadow-md p-4 flex justify-between items-center lg:hidden sticky top-0 z-30">
-            <button id="sidebar-toggle" class="text-green-700 focus:outline-none">
-                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+    <!-- Sidebar -->
+    <aside class="w-64 bg-blue-900 text-white hidden md:flex flex-col sidebar shadow-xl z-20">
+        <div class="h-20 flex items-center justify-center border-b border-blue-800">
+            <div class="flex items-center space-x-2">
+                <img src="download (2).png" alt="Logo" class="h-10 w-10 rounded-full bg-white p-1">
+                <span class="text-xl font-bold tracking-wide">Grace Academy</span>
+            </div>
+        </div>
+        
+        <nav class="flex-1 py-6 px-3 space-y-2">
+            <button onclick="showSection('dashboard')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-blue-800 transition-colors bg-blue-800 text-white">
+                <i class="fas fa-th-large w-6"></i>
+                <span class="font-medium">Dashboard</span>
             </button>
-            <h1 class="text-2xl font-bold text-green-900">Student Panel</h1>
-            <div class="flex items-center space-x-3">
-                <span class="font-medium text-gray-700 hidden sm:block" id="topbar-student-name"></span>
-                <img id="topbar-student-img" src="https://placehold.co/40x40/10B981/FFFFFF?text=S" alt="Student Profile" class="h-10 w-10 rounded-full border-2 border-green-500">
+            <button onclick="showSection('profile')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-blue-800 transition-colors text-blue-100">
+                <i class="fas fa-user-graduate w-6"></i>
+                <span class="font-medium">My Profile</span>
+            </button>
+            <button onclick="showSection('schedule')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-blue-800 transition-colors text-blue-100">
+                <i class="fas fa-calendar-alt w-6"></i>
+                <span class="font-medium">Schedule & Exams</span>
+            </button>
+            <button onclick="showSection('fees')" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-blue-800 transition-colors text-blue-100">
+                <i class="fas fa-file-invoice-dollar w-6"></i>
+                <span class="font-medium">Fees & Receipts</span>
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-blue-800">
+            <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 bg-blue-800 hover:bg-red-600 px-4 py-2 rounded-lg transition-colors duration-300">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        
+        <!-- Mobile Header -->
+        <header class="bg-white shadow-sm z-10 h-16 flex items-center justify-between px-6 md:px-8">
+            <div class="flex items-center md:hidden">
+                <button class="text-gray-600 focus:outline-none mr-4">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+                <span class="font-bold text-lg text-blue-900">Student Portal</span>
+            </div>
+            
+            <div class="hidden md:flex items-center">
+                <h2 id="page-title" class="text-2xl font-bold text-gray-800">Dashboard</h2>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <i class="fas fa-bell text-gray-500 text-xl cursor-pointer hover:text-blue-600"></i>
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">2</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="text-right hidden sm:block">
+                        <p id="header-name" class="text-sm font-semibold text-gray-800">Loading...</p>
+                        <p id="header-roll" class="text-xs text-gray-500">Student</p>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name=Student&background=0D8ABC&color=fff" id="header-avatar" alt="Profile" class="h-10 w-10 rounded-full border-2 border-blue-100">
+                </div>
             </div>
         </header>
 
-        <main class="flex-1 p-6 lg:p-10 bg-gray-50"></main>
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6 relative">
+            
+            <!-- Loading Overlay -->
+            <div id="loading-overlay" class="absolute inset-0 bg-white z-50 flex items-center justify-center">
+                <div class="text-center">
+                    <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600 border-solid mx-auto mb-4"></div>
+                    <p class="text-gray-600 font-medium">Loading Student Data...</p>
+                </div>
+            </div>
+
+            <!-- SECTION: DASHBOARD -->
+            <div id="dashboard" class="content-section fade-in">
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase font-medium">Attendance</p>
+                                <h3 id="dash-attendance" class="text-3xl font-bold text-gray-800">0%</h3>
+                            </div>
+                            <div class="p-3 bg-blue-100 rounded-full text-blue-600">
+                                <i class="fas fa-user-check text-xl"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Present days this month</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-red-500">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase font-medium">Fee Due</p>
+                                <h3 id="dash-due" class="text-3xl font-bold text-gray-800">PKR 0</h3>
+                            </div>
+                            <div class="p-3 bg-red-100 rounded-full text-red-600">
+                                <i class="fas fa-money-bill-wave text-xl"></i>
+                            </div>
+                        </div>
+                        <button onclick="showSection('fees')" class="text-sm text-red-600 font-medium mt-2 hover:underline">Pay Now &rarr;</button>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500 uppercase font-medium">Next Test</p>
+                                <h3 id="dash-test" class="text-xl font-bold text-gray-800">Loading...</h3>
+                            </div>
+                            <div class="p-3 bg-green-100 rounded-full text-green-600">
+                                <i class="fas fa-clipboard-list text-xl"></i>
+                            </div>
+                        </div>
+                        <p id="dash-test-date" class="text-sm text-gray-500 mt-2">--/--/----</p>
+                    </div>
+                </div>
+
+                <!-- Recent Activity / Announcements -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Recent Announcements</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-start space-x-3">
+                                <div class="bg-yellow-100 text-yellow-600 p-2 rounded-lg"><i class="fas fa-bullhorn"></i></div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-800">School Closed for Eid</h4>
+                                    <p class="text-sm text-gray-600">The academy will remain closed from Monday to Wednesday.</p>
+                                    <p class="text-xs text-gray-400 mt-1">2 hours ago</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <div class="bg-blue-100 text-blue-600 p-2 rounded-lg"><i class="fas fa-file-alt"></i></div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-800">Date Sheet Released</h4>
+                                    <p class="text-sm text-gray-600">Mid-term examination date sheet is now available.</p>
+                                    <p class="text-xs text-gray-400 mt-1">1 day ago</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Today's Schedule</h3>
+                        <div id="mini-schedule" class="space-y-3">
+                            <!-- Populated by JS -->
+                            <p class="text-gray-500 italic">No classes scheduled for today.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: PROFILE -->
+            <div id="profile" class="content-section hidden fade-in">
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="h-32 bg-gradient-to-r from-blue-600 to-blue-800"></div>
+                    <div class="px-6 pb-6 relative">
+                        <div class="flex flex-col md:flex-row items-center md:items-end -mt-12 mb-6">
+                            <img id="profile-img" src="https://ui-avatars.com/api/?name=Student&size=128" alt="Profile" class="h-24 w-24 rounded-full border-4 border-white shadow-md bg-white">
+                            <div class="mt-4 md:mt-0 md:ml-4 text-center md:text-left">
+                                <h2 id="profile-name" class="text-2xl font-bold text-gray-800">Student Name</h2>
+                                <p id="profile-roll" class="text-gray-600">Roll No: ---</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center"><i class="fas fa-user-circle mr-2 text-blue-600"></i> Personal Information</h4>
+                                <div class="bg-gray-50 rounded-lg p-4 space-y-3 border border-gray-100">
+                                    <div class="flex justify-between border-b border-gray-200 pb-2">
+                                        <span class="text-gray-500">Full Name</span>
+                                        <span id="info-name" class="font-medium text-gray-800">--</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-gray-200 pb-2">
+                                        <span class="text-gray-500">Father's Name</span>
+                                        <span id="info-father" class="font-medium text-gray-800">--</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-gray-200 pb-2">
+                                        <span class="text-gray-500">Date of Birth</span>
+                                        <span id="info-dob" class="font-medium text-gray-800">--</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-gray-200 pb-2">
+                                        <span class="text-gray-500">Phone</span>
+                                        <span id="info-phone" class="font-medium text-gray-800">--</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-500">Address</span>
+                                        <span id="info-address" class="font-medium text-gray-800">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center"><i class="fas fa-university mr-2 text-blue-600"></i> Academic Details</h4>
+                                <div class="bg-gray-50 rounded-lg p-4 space-y-3 border border-gray-100">
+                                    <div class="flex justify-between border-b border-gray-200 pb-2">
+                                        <span class="text-gray-500">Class</span>
+                                        <span id="info-class" class="font-medium text-gray-800">--</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-gray-200 pb-2">
+                                        <span class="text-gray-500">Section</span>
+                                        <span id="info-section" class="font-medium text-gray-800">--</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-gray-200 pb-2">
+                                        <span class="text-gray-500">Admission Date</span>
+                                        <span id="info-admit" class="font-medium text-gray-800">--</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-500">Current Status</span>
+                                        <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Active</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: SCHEDULE -->
+            <div id="schedule" class="content-section hidden fade-in">
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">Weekly Class Schedule</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                                    <th class="py-3 px-6 text-left">Time</th>
+                                    <th class="py-3 px-6 text-center">Monday</th>
+                                    <th class="py-3 px-6 text-center">Tuesday</th>
+                                    <th class="py-3 px-6 text-center">Wednesday</th>
+                                    <th class="py-3 px-6 text-center">Thursday</th>
+                                    <th class="py-3 px-6 text-center">Friday</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schedule-body" class="text-gray-600 text-sm font-light">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">Upcoming Tests & Exams</h3>
+                    <div id="exam-list" class="space-y-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: FEES -->
+            <div id="fees" class="content-section hidden fade-in">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="col-span-1 md:col-span-2 bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-bold text-gray-800">Payment History</h3>
+                            <button onclick="document.getElementById('payment-modal').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow transition">
+                                <i class="fas fa-credit-card mr-2"></i> Pay Online
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
+                                        <th class="py-3 px-4">Date</th>
+                                        <th class="py-3 px-4">Description</th>
+                                        <th class="py-3 px-4">Amount</th>
+                                        <th class="py-3 px-4">Status</th>
+                                        <th class="py-3 px-4">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactions-body" class="text-gray-700 text-sm">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="col-span-1 bg-white rounded-xl shadow-sm p-6 h-fit">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Fee Status</h3>
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 text-center mb-4">
+                            <p class="text-sm text-gray-500">Total Outstanding</p>
+                            <h2 id="fee-total-outstanding" class="text-3xl font-bold text-blue-900 mt-1">PKR 0</h2>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Monthly Tuition</span>
+                                <span class="font-medium">PKR 4,500</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Lab Charges</span>
+                                <span class="font-medium">PKR 500</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Library Fund</span>
+                                <span class="font-medium">PKR 200</span>
+                            </div>
+                            <hr class="border-gray-200">
+                            <div class="flex justify-between font-bold text-gray-800">
+                                <span>Monthly Total</span>
+                                <span>PKR 5,200</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
     </div>
 
-    <!-- Modal for notifications -->
-    <div id="notification-modal" class="modal-backdrop">
-        <div class="modal-content text-center">
-            <h3 id="modal-title" class="text-2xl font-bold mb-4">Notification</h3>
-            <p id="modal-message" class="mb-6"></p>
-            <button id="modal-close-btn" class="bg-green-600 text-white px-6 py-2 rounded-lg">Close</button>
+    <!-- PAYMENT MODAL -->
+    <div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-bounce-in">
+            <div class="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800 text-lg">Secure Fee Payment</h3>
+                <button onclick="document.getElementById('payment-modal').classList.add('hidden')" class="text-gray-500 hover:text-red-500">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="payment-form">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Select Month</label>
+                        <select id="pay-month" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="October 2025">October 2025</option>
+                            <option value="November 2025">November 2025</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Amount (PKR)</label>
+                        <input type="number" id="pay-amount" value="5200" readonly class="w-full bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 text-gray-600 cursor-not-allowed">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Card Number</label>
+                        <div class="relative">
+                            <input type="text" placeholder="0000 0000 0000 0000" class="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <i class="fas fa-credit-card absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 mb-6">
+                        <div class="w-1/2">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Expiry</label>
+                            <input type="text" placeholder="MM/YY" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="w-1/2">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">CVC</label>
+                            <input type="text" placeholder="123" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg shadow-lg transition transform hover:-translate-y-1">
+                        Pay PKR 5,200 Now
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
+    <!-- HIDDEN RECEIPT TEMPLATE (For Print) -->
+    <div id="receipt-print-area" class="hidden">
+        <div class="border-b-2 border-gray-800 pb-4 mb-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <img src="download (2).png" style="height: 60px; width: 60px;" alt="Logo">
+                <div>
+                    <h1 class="text-3xl font-bold">The Grace Academy</h1>
+                    <p class="text-sm">Paigah Dera Ghazi Khan</p>
+                    <p class="text-sm">Phone: 0336-2268687</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <h2 class="text-2xl font-bold text-gray-600">OFFICIAL RECEIPT</h2>
+                <p class="text-sm font-bold">Ref No: <span id="rcpt-ref">--</span></p>
+                <p class="text-sm">Date: <span id="rcpt-date">--</span></p>
+            </div>
+        </div>
+        
+        <div class="mb-8">
+            <div class="flex justify-between mb-2">
+                <span class="font-bold">Student Name:</span>
+                <span id="rcpt-name" class="border-b border-gray-400 w-1/2 text-left px-2">--</span>
+            </div>
+            <div class="flex justify-between mb-2">
+                <span class="font-bold">Roll Number:</span>
+                <span id="rcpt-roll" class="border-b border-gray-400 w-1/2 text-left px-2">--</span>
+            </div>
+            <div class="flex justify-between mb-2">
+                <span class="font-bold">Class / Section:</span>
+                <span id="rcpt-class" class="border-b border-gray-400 w-1/2 text-left px-2">--</span>
+            </div>
+        </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, collection, onSnapshot, query, where, orderBy, addDoc, serverTimestamp, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        <table class="w-full mb-8 border border-gray-800">
+            <thead>
+                <tr class="bg-gray-200 border-b border-gray-800">
+                    <th class="text-left p-3 border-r border-gray-800">Description</th>
+                    <th class="text-right p-3 w-32">Amount (PKR)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="p-3 border-r border-gray-800" id="rcpt-desc">Tuition Fee</td>
+                    <td class="text-right p-3" id="rcpt-amount">0</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr class="border-t border-gray-800 font-bold bg-gray-100">
+                    <td class="p-3 text-right border-r border-gray-800">Total Paid</td>
+                    <td class="text-right p-3" id="rcpt-total">0</td>
+                </tr>
+            </tfoot>
+        </table>
 
-        // Using the consistent "non-ruled" project configuration
+        <div class="flex justify-between items-end mt-16">
+            <div class="text-center">
+                <div class="border-t border-black w-40"></div>
+                <p class="text-xs mt-1">Cashier Signature</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm font-bold text-green-700 border-2 border-green-700 px-4 py-1 rounded">PAID</p>
+                <p class="text-xs text-gray-500 mt-2">Generated via Student Portal</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- FIREBASE CONFIG (Same as Login) ---
         const firebaseConfig = {
-  apiKey: "AIzaSyBPyGJ_qX58Ye3Z8BTiKnYGNMYROnyHlGA",
-  authDomain: "mubashir-2b7cc.firebaseapp.com",
-  projectId: "mubashir-2b7cc",
-  storageBucket: "mubashir-2b7cc.firebasestorage.app",
-  messagingSenderId: "107494735119",
-  appId: "1:107494735119:web:c686025b749196d39e527a",
-  measurementId: "G-J1WMVSB6J4"
-};
+            apiKey: "AIzaSyDrOEtaX7Hhp248bI8oQiMTiGCbK2QdMho",
+            authDomain: "sultania-3e5ca.firebaseapp.com",
+            projectId: "sultania-3e5ca",
+            storageBucket: "sultania-3e5ca.firebasestorage.app",
+            messagingSenderId: "429093155759",
+            appId: "1:429093155759:web:76224bef015291ba83355a",
+            measurementId: "G-KBDE0PLY8R"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-        const loadingOverlay = document.getElementById('loading-overlay');
-        const loadingText = document.getElementById('loading-text');
+        // --- GLOBAL STATE ---
+        let currentUserData = null;
+        let currentUserUid = null;
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        
-        let studentDataCache = null;
+        // --- INIT & AUTH CHECK ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const session = JSON.parse(localStorage.getItem('grace_user_session'));
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user && !user.isAnonymous) {
-                const userDocRef = doc(db, "users", user.uid);
-                const userDoc = await getDoc(userDocRef);
-
-                if (userDoc.exists() && userDoc.data().role === 'student') {
-                    const studentProfileRef = doc(db, "students", user.uid);
-                    onSnapshot(studentProfileRef, (studentSnap) => {
-                        if (studentSnap.exists()) {
-                            studentDataCache = { id: user.uid, ...studentSnap.data() };
-                            // Populate UI only once
-                            if (!document.getElementById('sidebar').innerHTML.trim()) {
-                                populateUI();
-                                initializeStudentPortal(studentDataCache);
-                            } else {
-                                // Refresh currently viewed section if data changes
-                                updateCurrentSection();
-                            }
-                        } else {
-                            handleAuthError("Error: Your student profile does not exist.");
-                        }
-                    });
-                } else {
-                    handleAuthError("Access Denied. This portal is for students only.");
-                }
-            } else {
-                handleAuthError("Please log in to access the student portal.");
-            }
-        });
-        
-        function handleAuthError(message) {
-             loadingText.textContent = message + ' Redirecting...';
-             setTimeout(() => window.location.href = 'login.html', 2000);
-        }
-
-        function populateUI() {
-            document.getElementById('sidebar').innerHTML = `
-                <div class="flex items-center space-x-3 border-b border-green-600 pb-4">
-                    <img src="download (2).png" alt="Academy Logo" class="h-12 w-auto">
-                    <span class="text-2xl font-bold tracking-tight">Student Portal</span>
-                </div>
-                <nav class="flex-1 space-y-2">
-                    <a href="#dashboard" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-green-600 transition duration-200"><i class="fas fa-home w-6"></i><span>Dashboard</span></a>
-                    <a href="#my-profile" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-green-600 transition duration-200"><i class="fas fa-user-circle w-6"></i><span>My Profile</span></a>
-                    <a href="#my-assignments" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-green-600 transition duration-200"><i class="fas fa-book-open w-6"></i><span>Assignments</span></a>
-                    <a href="#my-results" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-green-600 transition duration-200"><i class="fas fa-poll w-6"></i><span>My Results</span></a>
-                    <a href="#fee-status" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-green-600 transition duration-200"><i class="fas fa-file-invoice-dollar w-6"></i><span>Fee Status</span></a>
-                    <a href="#announcements" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-green-600 transition duration-200"><i class="fas fa-bullhorn w-6"></i><span>Announcements</span></a>
-                    <a href="#library" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-green-600 transition duration-200"><i class="fas fa-book-reader w-6"></i><span>Library</span></a>
-                    <a href="#events" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-green-600 transition duration-200"><i class="fas fa-calendar-check w-6"></i><span>Events</span></a>
-                </nav>
-                <div class="border-t border-green-600 pt-4">
-                    <a href="index.html" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-lg hover:bg-green-600 transition duration-200"><i class="fas fa-globe w-6"></i><span>Main Website</span></a>
-                    <button id="logout-button" class="w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-lg bg-red-600 hover:bg-red-700 transition duration-200 mt-2"><i class="fas fa-sign-out-alt w-6"></i><span>Logout</span></button>
-                </div>`;
-            
-            document.querySelector('main').innerHTML = `
-                <section id="dashboard" class="hidden"></section>
-                <section id="my-profile" class="hidden"></section>
-                <section id="my-assignments" class="hidden"></section>
-                <section id="my-results" class="hidden"></section>
-                <section id="fee-status" class="hidden"></section>
-                <section id="announcements" class="hidden"></section>
-                <section id="library" class="hidden"></section>
-                <section id="events" class="hidden"></section>`;
-            
-            document.querySelectorAll('.sidebar nav a').forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); showSection(link.getAttribute('href').substring(1)); }); });
-            document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
-            document.getElementById('sidebar-toggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('hidden-mobile'));
-        }
-        
-        let currentSectionId = 'dashboard';
-        
-        function updateCurrentSection() {
-            showSection(currentSectionId, true); // force re-render
-        }
-
-        function showSection(targetId, forceRender = false) {
-             if (targetId === currentSectionId && !forceRender) return;
-             currentSectionId = targetId;
-
-            document.querySelectorAll('main section').forEach(sec => sec.classList.add('hidden'));
-            document.querySelectorAll('.sidebar nav a').forEach(link => link.classList.remove('active-link'));
-            
-            const targetSection = document.getElementById(targetId);
-            if (targetSection) {
-                 targetSection.classList.remove('hidden');
-                 document.querySelector(`.sidebar nav a[href="#${targetId}"]`).classList.add('active-link');
-
-                 switch(targetId) {
-                     case 'dashboard': renderDashboard(); break;
-                     case 'my-profile': renderProfile(); break;
-                     case 'my-assignments': renderAssignments(); break;
-                     case 'my-results': renderResults(); break;
-                     case 'fee-status': renderFeeStatus(); break;
-                     case 'announcements': renderAnnouncements(); break;
-                     case 'library': renderLibrary(); break;
-                     case 'events': renderEvents(); break;
-                 }
-            }
-            if (window.innerWidth < 1024) document.getElementById('sidebar').classList.add('hidden-mobile');
-        }
-
-        function initializeStudentPortal(studentData) {
-            document.getElementById('topbar-student-name').textContent = studentData.name.split(' ')[0];
-            document.getElementById('topbar-student-img').src = studentData.profileImageUrl || `https://placehold.co/40x40/10B981/FFFFFF?text=${studentData.name.charAt(0)}`;
-            
-            showSection('dashboard', true); // Show dashboard on initial load
-            loadingOverlay.style.display = 'none';
-        }
-
-        // --- SECTION RENDERERS ---
-
-        function renderDashboard() {
-            const section = document.getElementById('dashboard');
-            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in">
-                <h2 class="text-4xl font-extrabold text-green-900 mb-4">Welcome, ${studentDataCache.name}!</h2>
-                <p class="text-lg text-gray-600">This is your personal portal. You can view your assignments, check your fee status, and see important announcements from the academy.</p>
-            </div>`;
-        }
-
-        function renderProfile() {
-            const section = document.getElementById('my-profile');
-            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in">
-                <h2 class="text-4xl font-extrabold text-green-900 mb-8 border-b-2 border-green-200 pb-4">My Profile</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-lg">
-                    <div><p class="font-semibold text-gray-500">Full Name:</p><p>${studentDataCache.name}</p></div>
-                    <div><p class="font-semibold text-gray-500">Email:</p><p>${studentDataCache.email}</p></div>
-                    <div><p class="font-semibold text-gray-500">Roll Number:</p><p>${studentDataCache.rollNo}</p></div>
-                    <div><p class="font-semibold text-gray-500">Class:</p><p>${studentDataCache.class} ${studentDataCache.section || ''}</p></div>
-                </div>
-            </div>`;
-        }
-
-        function renderAssignments() {
-            const section = document.getElementById('my-assignments');
-            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in">
-                <h2 class="text-4xl font-extrabold text-green-900 mb-8 border-b-2 border-green-200 pb-4">My Assignments</h2>
-                <div id="assignment-list" class="space-y-6">Loading assignments...</div>
-            </div>`;
-            
-            const listContainer = section.querySelector('#assignment-list');
-            const studentClass = `${studentDataCache.class} ${studentDataCache.section || ''}`.trim();
-            const q = query(collection(db, "assignments"), where("assignedTo", "==", studentClass), orderBy("dueDate", "desc"));
-            
-            onSnapshot(q, (snapshot) => {
-                if (snapshot.empty) {
-                    listContainer.innerHTML = `<p class="text-gray-500">No assignments found for your class.</p>`;
-                    return;
-                }
-                
-                listContainer.innerHTML = snapshot.docs.map(doc => {
-                    const ass = { id: doc.id, ...doc.data() };
-                    const isSubmitted = (ass.submissions || []).some(sub => sub.studentId === studentDataCache.id);
-                    const grade = (ass.submissions || []).find(sub => sub.studentId === studentDataCache.id)?.grade;
-
-                    return `<div class="bg-gray-100 p-4 rounded-lg">
-                        <div class="flex flex-wrap justify-between items-start gap-4">
-                            <div>
-                                <h3 class="font-bold text-xl">${ass.title}</h3>
-                                <p class="text-sm text-gray-600">By: ${ass.teacher} | Due: ${ass.dueDate}</p>
-                                <p class="mt-2">${ass.description}</p>
-                            </div>
-                            <div class="flex-shrink-0">
-                                ${isSubmitted 
-                                    ? `<div class="text-center"><span class="px-3 py-1 rounded-full text-sm font-semibold bg-green-200 text-green-800">Submitted</span>
-                                        ${grade ? `<p class="text-sm mt-2">Grade: <span class="font-bold">${grade}</span></p>` : `<p class="text-sm mt-2 text-gray-500">Not Graded Yet</p>`}
-                                      </div>` 
-                                    : `<button class="submit-assignment-btn bg-blue-600 text-white px-4 py-2 rounded-lg" data-id="${ass.id}">Submit</button>`
-                                }
-                            </div>
-                        </div>
-                    </div>`;
-                }).join('');
-                
-                section.querySelectorAll('.submit-assignment-btn').forEach(btn => btn.addEventListener('click', (e) => showSubmissionModal(e.currentTarget.dataset.id)));
-            }, (error) => listContainer.innerHTML = `<p class="text-red-500">Error loading assignments.</p>`);
-        }
-
-        function renderResults() {
-            const section = document.getElementById('my-results');
-            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in">
-                <h2 class="text-4xl font-extrabold text-green-900 mb-8 border-b-2 border-green-200 pb-4">My Results</h2>
-                <div id="results-container" class="space-y-8">Loading results...</div>
-            </div>`;
-            
-            const resultsContainer = section.querySelector('#results-container');
-            const resultsQuery = query(collection(db, `students/${studentDataCache.id}/results`), orderBy("examDate", "desc"));
-
-            onSnapshot(resultsQuery, (snapshot) => {
-                if (snapshot.empty) {
-                    resultsContainer.innerHTML = `<p class="text-gray-500">No results have been published for you yet.</p>`;
-                    return;
-                }
-
-                // Group results by exam name
-                const resultsByExam = snapshot.docs.reduce((acc, doc) => {
-                    const result = doc.data();
-                    const examName = result.examName || 'Uncategorized';
-                    if (!acc[examName]) {
-                        acc[examName] = {
-                            results: [],
-                            totalObtained: 0,
-                            totalMarks: 0,
-                            date: result.examDate ? result.examDate.toDate().toLocaleDateString() : 'N/A'
-                        };
-                    }
-                    acc[examName].results.push(result);
-                    acc[examName].totalObtained += Number(result.obtainedMarks) || 0;
-                    acc[examName].totalMarks += Number(result.totalMarks) || 0;
-                    return acc;
-                }, {});
-
-                resultsContainer.innerHTML = Object.entries(resultsByExam).map(([examName, data]) => {
-                    const overallPercentage = data.totalMarks > 0 ? ((data.totalObtained / data.totalMarks) * 100).toFixed(2) : 0;
-                    let percentageColor = 'text-gray-800';
-                    if (overallPercentage >= 80) percentageColor = 'text-green-600';
-                    else if (overallPercentage >= 60) percentageColor = 'text-blue-600';
-                    else if (overallPercentage >= 40) percentageColor = 'text-yellow-600';
-                    else percentageColor = 'text-red-600';
-
-                    return `
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-md">
-                            <div class="flex flex-wrap justify-between items-center mb-4 border-b pb-3">
-                                <div>
-                                    <h3 class="text-2xl font-bold text-gray-800">${examName}</h3>
-                                    <p class="text-sm text-gray-500">Date: ${data.date}</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-lg font-semibold">Overall: <span class="font-bold ${percentageColor}">${overallPercentage}%</span></p>
-                                    <p class="text-sm text-gray-600">Total: ${data.totalObtained} / ${data.totalMarks}</p>
-                                </div>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full">
-                                    <thead class="text-left text-sm text-gray-500">
-                                        <tr>
-                                            <th class="py-2 px-3 font-medium">Subject</th>
-                                            <th class="py-2 px-3 font-medium text-center">Obtained Marks</th>
-                                            <th class="py-2 px-3 font-medium text-center">Total Marks</th>
-                                            <th class="py-2 px-3 font-medium text-center">Percentage</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${data.results.map(r => {
-                                            const subjectPercentage = r.totalMarks > 0 ? ((r.obtainedMarks / r.totalMarks) * 100).toFixed(2) : 0;
-                                            return `
-                                            <tr class="border-t">
-                                                <td class="py-3 px-3 font-semibold">${r.subject}</td>
-                                                <td class="py-3 px-3 text-center">${r.obtainedMarks}</td>
-                                                <td class="py-3 px-3 text-center">${r.totalMarks}</td>
-                                                <td class="py-3 px-3 text-center font-medium">${subjectPercentage}%</td>
-                                            </tr>
-                                            `
-                                        }).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-
-            }, (error) => {
-                console.error("Error fetching results: ", error);
-                resultsContainer.innerHTML = `<p class="text-red-500">Could not load results. Please try again later.</p>`;
-            });
-        }
-
-
-        function renderFeeStatus() {
-            const section = document.getElementById('fee-status');
-            const isPaid = studentDataCache.feeStatus === 'Paid';
-            const statusClass = isPaid ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800';
-
-            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in">
-                <h2 class="text-4xl font-extrabold text-green-900 mb-8 border-b-2 border-green-200 pb-4">Fee Status</h2>
-                <div class="mb-8 text-center bg-gray-50 p-6 rounded-lg">
-                    <p class="text-lg text-gray-600 mb-2">Current Month's Fee Status</p>
-                    <p class="text-3xl font-bold"><span class="px-4 py-2 rounded-full ${statusClass}">${studentDataCache.feeStatus || 'Unpaid'}</span></p>
-                </div>
-                
-                <div id="payment-section"></div>
-                <div id="payment-history-section">
-                    <h3 class="text-2xl font-bold text-gray-700 mb-4">Payment History</h3>
-                    <div id="payment-history-list" class="space-y-2">Loading history...</div>
-                </div>
-            </div>`;
-            
-            if (!isPaid) {
-                renderPaymentForm();
-            }
-
-            renderPaymentHistory();
-        }
-        
-        async function renderPaymentForm() {
-            const paymentSection = document.getElementById('payment-section');
-            const settingsSnap = await getDoc(doc(db, 'settings', 'payment'));
-            const settings = settingsSnap.exists() ? settingsSnap.data() : {};
-
-            paymentSection.innerHTML = `<div class="mb-8 border rounded-lg p-6">
-                    <h3 class="text-2xl font-bold text-gray-700 mb-4">Submit Payment Proof</h3>
-                    <div class="mb-6 space-y-4">
-                        <p class="font-semibold">Please transfer your fee to one of the accounts below:</p>
-                        ${settings.easypaisaNumber ? `<div><p><b>Easypaisa:</b> ${settings.easypaisaTitle} - ${settings.easypaisaNumber}</p></div>` : ''}
-                        ${settings.bankIban ? `<div><p><b>Bank Transfer:</b> ${settings.bankName}, ${settings.bankTitle} - ${settings.bankIban}</p></div>` : ''}
-                    </div>
-                    <form id="payment-proof-form">
-                        <label for="proof-url" class="block font-medium mb-2">Proof of Payment URL (e.g., Imgur link)</label>
-                        <input type="url" id="proof-url" class="w-full p-2 border rounded" placeholder="https://i.imgur.com/your-receipt.jpg" required>
-                        <button type="submit" class="bg-green-600 text-white px-5 py-2 rounded-lg font-medium mt-4">Submit for Verification</button>
-                    </form>
-                </div>`;
-            
-            document.getElementById('payment-proof-form').addEventListener('submit', handlePaymentProofSubmit);
-        }
-
-        async function renderPaymentHistory() {
-            const historyList = document.getElementById('payment-history-list');
-            const q = query(collection(db, `students/${studentDataCache.id}/paymentHistory`), orderBy("date", "desc"));
-            onSnapshot(q, (snapshot) => {
-                if(snapshot.empty) { historyList.innerHTML = `<p class="text-gray-500">No payment history found.</p>`; return; }
-                historyList.innerHTML = snapshot.docs.map(doc => {
-                    const record = doc.data();
-                    const date = record.date ? record.date.toDate().toLocaleDateString() : 'N/A';
-                    return `<div class="bg-gray-100 p-3 rounded-md flex justify-between">
-                                <span>${date} - ${record.method}</span>
-                                <span class="font-semibold text-green-700">${record.status}</span>
-                            </div>`;
-                }).join('');
-            });
-        }
-
-        function renderAnnouncements() {
-            const section = document.getElementById('announcements');
-            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in">
-                <h2 class="text-4xl font-extrabold text-green-900 mb-8 border-b-2 border-green-200 pb-4">Announcements</h2>
-                <div id="announcement-list" class="space-y-4">Loading announcements...</div>
-            </div>`;
-
-            const list = section.querySelector('#announcement-list');
-            onSnapshot(query(collection(db, "announcements"), orderBy("date", "desc")), (snapshot) => {
-                if(snapshot.empty) { list.innerHTML = `<p class="text-gray-500">No announcements found.</p>`; return; }
-                list.innerHTML = snapshot.docs.map(doc => {
-                    const ann = doc.data();
-                    return `<div class="bg-gray-100 p-4 rounded-lg"><h3 class="font-bold text-lg">${ann.title}</h3><p>${ann.content}</p><p class="text-sm text-gray-500 mt-2">Date: ${ann.date}</p></div>`;
-                }).join('');
-            });
-        }
-        
-        function renderLibrary() {
-            const section = document.getElementById('library');
-            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in">
-                <h2 class="text-4xl font-extrabold text-green-900 mb-8 border-b-2 border-green-200 pb-4">Digital Library</h2>
-                <div id="library-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">Loading books...</div>
-            </div>`;
-            
-            const listContainer = section.querySelector('#library-list');
-            const q = query(collection(db, "libraryBooks"), orderBy("title"));
-            
-            onSnapshot(q, (snapshot) => {
-                if (snapshot.empty) {
-                    listContainer.innerHTML = `<p class="text-gray-500 col-span-full">No books are available in the library at the moment.</p>`;
-                    return;
-                }
-                
-                listContainer.innerHTML = snapshot.docs.map(doc => {
-                    const book = { id: doc.id, ...doc.data() };
-                    return `<div class="bg-gray-50 border rounded-lg p-4 flex flex-col items-center text-center">
-                                <img src="${book.coverUrl || 'https://placehold.co/150x200'}" alt="${book.title}" class="w-32 h-44 object-cover rounded shadow-md mb-4">
-                                <h3 class="font-bold text-lg">${book.title}</h3>
-                                <p class="text-sm text-gray-600 mb-2">by ${book.author}</p>
-                                <p class="text-xs text-gray-500 mb-4">${book.category}</p>
-                                <a href="${book.fileUrl}" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">Read Book</a>
-                            </div>`;
-                }).join('');
-            });
-        }
-
-        function renderEvents() {
-            const section = document.getElementById('events');
-            section.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-xl fade-in">
-                <h2 class="text-4xl font-extrabold text-green-900 mb-8 border-b-2 border-green-200 pb-4">Upcoming Events</h2>
-                <div id="event-list" class="space-y-6">Loading events...</div>
-            </div>`;
-
-            const listContainer = section.querySelector('#event-list');
-            const q = query(collection(db, "events"), orderBy("date"));
-
-            onSnapshot(q, (snapshot) => {
-                if(snapshot.empty) {
-                    listContainer.innerHTML = `<p class="text-gray-500">There are no upcoming events scheduled.</p>`;
-                    return;
-                }
-                listContainer.innerHTML = snapshot.docs.map(doc => {
-                    const event = { id: doc.id, ...doc.data() };
-                    return `<div class="bg-gray-100 p-4 rounded-lg flex items-start space-x-4">
-                                <div class="flex-shrink-0 bg-green-600 text-white rounded-lg p-3 text-center w-20">
-                                    <p class="text-3xl font-bold">${new Date(event.date).getDate()}</p>
-                                    <p class="text-sm">${new Date(event.date).toLocaleString('default', { month: 'short' })}</p>
-                                </div>
-                                <div>
-                                    <h3 class="font-bold text-xl">${event.title}</h3>
-                                    <p class="text-sm text-gray-600">${event.time} at ${event.location}</p>
-                                    <p class="mt-1">${event.description}</p>
-                                </div>
-                            </div>`;
-                }).join('');
-            });
-        }
-        
-        // --- MODAL & FORM LOGIC ---
-
-        function showSubmissionModal(assignmentId) {
-            const modal = document.getElementById('notification-modal');
-            const title = modal.querySelector('#modal-title');
-            const message = modal.querySelector('#modal-message');
-            
-            title.textContent = "Submit Assignment";
-            message.innerHTML = `
-                <form id="submission-form" class="text-left">
-                    <label for="submission-url" class="block font-medium mb-2">Submission URL (e.g., Google Drive, Imgur)</label>
-                    <input type="url" id="submission-url" class="w-full p-2 border rounded" placeholder="https://docs.google.com/..." required>
-                    <p class="text-xs text-gray-500 mt-1">Please ensure the link is publicly accessible.</p>
-                </form>
-            `;
-            modal.querySelector('#modal-close-btn').textContent = "Submit";
-            
-            const closeBtn = modal.querySelector('#modal-close-btn');
-            const newSubmitBtn = closeBtn.cloneNode(true); // Avoid multiple listeners
-            closeBtn.parentNode.replaceChild(newSubmitBtn, closeBtn);
-
-            newSubmitBtn.onclick = () => handleAssignmentSubmit(assignmentId);
-            modal.classList.add('visible');
-            
-            // Add a temporary close button
-             const tempClose = document.createElement('button');
-             tempClose.textContent = 'Cancel';
-             tempClose.className = 'bg-gray-300 text-gray-800 px-6 py-2 rounded-lg ml-2';
-             tempClose.onclick = () => modal.classList.remove('visible');
-             newSubmitBtn.insertAdjacentElement('afterend', tempClose);
-        }
-        
-        async function handleAssignmentSubmit(assignmentId) {
-            const submissionUrl = document.getElementById('submission-url').value;
-            if (!submissionUrl) {
-                showNotification("Error", "Submission URL cannot be empty.");
+            if (!session || !session.isLoggedIn || session.role !== 'student') {
+                window.location.href = 'login.html';
                 return;
             }
-            
-            const assignmentRef = doc(db, 'assignments', assignmentId);
-            const submissionData = {
-                studentId: studentDataCache.id,
-                studentName: studentDataCache.name, // for easier lookup by teacher
-                fileUrl: submissionUrl,
-                submittedAt: serverTimestamp(),
-                grade: null
-            };
-            
-            // This is a simple implementation. A better approach uses arrayUnion in a transaction.
-            const assignmentDoc = await getDoc(assignmentRef);
-            const submissions = assignmentDoc.data().submissions || [];
-            submissions.push(submissionData);
-            
-            await updateDoc(assignmentRef, { submissions: submissions });
-            
-            showNotification("Success", "Your assignment has been submitted successfully!");
-        }
 
-        async function handlePaymentProofSubmit(e) {
-            e.preventDefault();
-            const proofUrl = document.getElementById('proof-url').value;
-            const data = {
-                studentId: studentDataCache.id,
-                studentName: studentDataCache.name,
-                studentClass: `${studentDataCache.class} ${studentDataCache.section || ''}`.trim(),
-                proofUrl: proofUrl,
-                submittedAt: serverTimestamp(),
-                status: 'Pending'
-            };
-            
-            await addDoc(collection(db, "paymentRequests"), data);
-            showNotification("Success", "Your payment proof has been submitted for verification.");
-            document.getElementById('payment-section').innerHTML = `<p class="text-center font-semibold text-blue-700">Your payment request is pending review.</p>`;
-        }
-        
-        function showNotification(title, message) {
-            const modal = document.getElementById('notification-modal');
-            modal.querySelector('#modal-title').textContent = title;
-            modal.querySelector('#modal-message').innerHTML = `<p>${message}</p>`; // Use innerHTML to allow simple formatting if needed
-            
-            const closeBtn = modal.querySelector('#modal-close-btn');
-            closeBtn.textContent = 'Close';
-            
-            // Re-clone to remove old event listeners
-            const newCloseBtn = closeBtn.cloneNode(true);
-            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-
-            newCloseBtn.onclick = () => modal.classList.remove('visible');
-            modal.classList.add('visible');
-        }
-        
-        document.getElementById('modal-close-btn').addEventListener('click', () => {
-             document.getElementById('notification-modal').classList.remove('visible');
+            // Verify Firebase Auth State
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    currentUserUid = user.uid;
+                    await initializeStudentData(user); // Ensure DB has data
+                    fetchAndRenderData(user.uid);
+                } else {
+                    window.location.href = 'login.html';
+                }
+            });
         });
 
+        // --- DATA INITIALIZATION (Handle Empty DB) ---
+        async function initializeStudentData(user) {
+            const userRef = db.collection('students').doc(user.uid);
+            const doc = await userRef.get();
+
+            if (!doc.exists) {
+                console.log("Creating default student profile...");
+                // Create a demo profile for the new user
+                const defaultData = {
+                    name: user.email.split('@')[0].toUpperCase(),
+                    fatherName: "Not Updated",
+                    dob: "2008-01-01",
+                    phone: "0300-1234567",
+                    address: "Paigah, Dera Ghazi Khan",
+                    rollNo: "GA-" + Math.floor(Math.random() * 1000),
+                    class: "10th",
+                    section: "A",
+                    admissionDate: new Date().toISOString().split('T')[0],
+                    attendance: 85,
+                    feeDue: 5200,
+                    transactions: [],
+                    exams: [
+                        { subject: "Mathematics", date: "2025-10-25", topic: "Algebra & Geometry" },
+                        { subject: "Physics", date: "2025-10-28", topic: "Optics" }
+                    ]
+                };
+                await userRef.set(defaultData);
+            }
+        }
+
+        // --- FETCH DATA ---
+        async function fetchAndRenderData(uid) {
+            try {
+                const doc = await db.collection('students').doc(uid).get();
+                if (doc.exists) {
+                    currentUserData = doc.data();
+                    renderUI(currentUserData);
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                alert("Failed to load student data.");
+            } finally {
+                document.getElementById('loading-overlay').classList.add('hidden');
+            }
+        }
+
+        // --- RENDER UI ---
+        function renderUI(data) {
+            // Header
+            document.getElementById('header-name').textContent = data.name;
+            document.getElementById('header-roll').textContent = data.rollNo;
+            document.getElementById('header-avatar').src = `https://ui-avatars.com/api/?name=${data.name}&background=0D8ABC&color=fff`;
+
+            // Dashboard
+            document.getElementById('dash-attendance').textContent = data.attendance + "%";
+            document.getElementById('dash-due').textContent = "PKR " + data.feeDue.toLocaleString();
+            if(data.exams && data.exams.length > 0) {
+                document.getElementById('dash-test').textContent = data.exams[0].subject;
+                document.getElementById('dash-test-date').textContent = formatDate(data.exams[0].date);
+            }
+
+            // Profile
+            document.getElementById('profile-name').textContent = data.name;
+            document.getElementById('profile-img').src = `https://ui-avatars.com/api/?name=${data.name}&size=128&background=random`;
+            document.getElementById('profile-roll').textContent = "Roll No: " + data.rollNo;
+            document.getElementById('info-name').textContent = data.name;
+            document.getElementById('info-father').textContent = data.fatherName;
+            document.getElementById('info-dob').textContent = data.dob;
+            document.getElementById('info-phone').textContent = data.phone;
+            document.getElementById('info-address').textContent = data.address;
+            document.getElementById('info-class').textContent = data.class;
+            document.getElementById('info-section').textContent = data.section;
+            document.getElementById('info-admit').textContent = data.admissionDate;
+
+            // Schedule (Static for now, but dynamic capable)
+            renderSchedule();
+            
+            // Exams
+            const examContainer = document.getElementById('exam-list');
+            examContainer.innerHTML = '';
+            (data.exams || []).forEach(exam => {
+                examContainer.innerHTML += `
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-800">${exam.subject}</h4>
+                            <p class="text-sm text-gray-600">${exam.topic}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="block font-bold text-blue-900">${formatDate(exam.date)}</span>
+                            <span class="text-xs text-gray-500">9:00 AM</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Fees
+            document.getElementById('fee-total-outstanding').textContent = "PKR " + data.feeDue.toLocaleString();
+            renderTransactions(data.transactions || []);
+        }
+
+        function renderSchedule() {
+            const subjects = ["Math", "Physics", "Chemistry", "English", "Urdu", "Islamiat"];
+            const times = ["8:00", "9:00", "10:00", "11:30", "12:30"];
+            const tbody = document.getElementById('schedule-body');
+            tbody.innerHTML = '';
+
+            times.forEach((time, index) => {
+                let row = `<tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="py-3 px-6 text-left whitespace-nowrap font-medium">${time}</td>`;
+                for(let i=0; i<5; i++) {
+                    // Random subject generator for demo
+                    const sub = subjects[(index + i) % subjects.length];
+                    row += `<td class="py-3 px-6 text-center">${sub}</td>`;
+                }
+                row += `</tr>`;
+                tbody.innerHTML += row;
+            });
+            
+            // Mini schedule for dashboard
+            const mini = document.getElementById('mini-schedule');
+            mini.innerHTML = '';
+            for(let i=0; i<3; i++) {
+                mini.innerHTML += `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <span class="font-medium text-gray-700">${subjects[i]}</span>
+                        <span class="text-sm text-gray-500">${times[i]} - ${times[i].replace(':00',':45')}</span>
+                    </div>`;
+            }
+        }
+
+        function renderTransactions(transactions) {
+            const tbody = document.getElementById('transactions-body');
+            tbody.innerHTML = '';
+            
+            if(transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">No payment history found.</td></tr>';
+                return;
+            }
+
+            transactions.forEach((tx, index) => {
+                tbody.innerHTML += `
+                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                        <td class="py-3 px-4">${formatDate(tx.date)}</td>
+                        <td class="py-3 px-4">${tx.description}</td>
+                        <td class="py-3 px-4 font-bold">PKR ${tx.amount}</td>
+                        <td class="py-3 px-4"><span class="bg-green-100 text-green-700 py-1 px-3 rounded-full text-xs font-bold">Paid</span></td>
+                        <td class="py-3 px-4">
+                            <button onclick="printReceipt(${index})" class="text-blue-600 hover:text-blue-900 text-sm font-medium">
+                                <i class="fas fa-download"></i> Receipt
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- NAVIGATION LOGIC ---
+        window.showSection = function(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
+            // Show target
+            document.getElementById(sectionId).classList.remove('hidden');
+            
+            // Update Title
+            const titles = {
+                'dashboard': 'Dashboard',
+                'profile': 'My Profile',
+                'schedule': 'Schedule & Exams',
+                'fees': 'Fees & Payments'
+            };
+            document.getElementById('page-title').textContent = titles[sectionId];
+            
+            // Update Sidebar Active State
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-800', 'text-white');
+                btn.classList.add('text-blue-100');
+            });
+            // Highlight current (Simple logic for demo, usually by ID)
+            // In a real app, assign IDs to buttons to target specifically
+        }
+
+        // --- FEE PAYMENT LOGIC ---
+        document.getElementById('payment-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const month = document.getElementById('pay-month').value;
+            const amount = 5200; // Fixed for demo
+
+            const newTx = {
+                date: new Date().toISOString(),
+                description: `Tuition Fee - ${month}`,
+                amount: amount,
+                ref: "TXN-" + Date.now()
+            };
+
+            try {
+                // Update Firestore
+                await db.collection('students').doc(currentUserUid).update({
+                    feeDue: firebase.firestore.FieldValue.increment(-amount),
+                    transactions: firebase.firestore.FieldValue.arrayUnion(newTx)
+                });
+
+                // Update Local State
+                currentUserData.feeDue -= amount;
+                if(!currentUserData.transactions) currentUserData.transactions = [];
+                currentUserData.transactions.push(newTx);
+                
+                // Refresh UI
+                renderUI(currentUserData);
+                
+                // Close Modal & Success
+                document.getElementById('payment-modal').classList.add('hidden');
+                alert("Payment Successful!");
+            } catch (err) {
+                console.error(err);
+                alert("Payment failed. Please try again.");
+            }
+        });
+
+        // --- RECEIPT PRINTING ---
+        window.printReceipt = function(index) {
+            const tx = currentUserData.transactions[index];
+            
+            // Fill Print Template
+            document.getElementById('rcpt-ref').textContent = tx.ref;
+            document.getElementById('rcpt-date').textContent = formatDate(tx.date);
+            document.getElementById('rcpt-name').textContent = currentUserData.name;
+            document.getElementById('rcpt-roll').textContent = currentUserData.rollNo;
+            document.getElementById('rcpt-class').textContent = `${currentUserData.class} (${currentUserData.section})`;
+            document.getElementById('rcpt-desc').textContent = tx.description;
+            document.getElementById('rcpt-amount').textContent = tx.amount;
+            document.getElementById('rcpt-total').textContent = tx.amount;
+
+            // Trigger Print
+            window.print();
+        }
+
+        // --- UTILS ---
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+
+        window.logout = function() {
+            auth.signOut().then(() => {
+                localStorage.removeItem('grace_user_session');
+                window.location.href = 'login.html';
+            });
+        }
     </script>
 </body>
 </html>
