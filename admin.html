@@ -39,6 +39,13 @@
         .toggle-checkbox:checked { right: 0; border-color: #68D391; }
         .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
 
+        /* Receipt Themes */
+        .receipt-classic { border: 4px double #000; font-family: serif; }
+        .receipt-modern-blue { border-top: 10px solid #3b82f6; border-bottom: 10px solid #1e3a8a; font-family: sans-serif; }
+        .receipt-corporate { border: 1px solid #333; background-color: #f8f9fa; font-family: 'Arial', sans-serif; }
+        .receipt-minimalist { border: none; font-family: 'Courier New', monospace; }
+        .receipt-elegant { border: 2px solid #d4af37; background: #fffaf0; font-family: 'Times New Roman', serif; }
+
         /* Print Styles */
         @media print {
             @page { margin: 0; size: auto; }
@@ -367,13 +374,56 @@
             <!-- SECTION: SETTINGS -->
             <div id="settings" class="content-section hidden fade-in">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800">Payment Methods Configuration</h2>
-                    <button onclick="savePaymentSettings()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-md transition font-medium">
+                    <h2 class="text-2xl font-bold text-slate-800">System Configuration</h2>
+                    <button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-md transition font-medium">
                         <i class="fas fa-save mr-2"></i> Save Changes
                     </button>
                 </div>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Receipt Settings -->
+                    <div class="glass-panel rounded-xl p-6 lg:col-span-2">
+                        <h3 class="font-bold text-lg text-slate-800 mb-4">Receipt Template</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="receipt-theme" value="classic" class="sr-only peer" checked>
+                                <div class="border-2 rounded-lg p-4 text-center peer-checked:border-blue-600 peer-checked:bg-blue-50">
+                                    <div class="h-20 bg-gray-100 border-4 border-double border-black mb-2"></div>
+                                    <span class="text-sm font-medium">Classic</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="receipt-theme" value="modern-blue" class="sr-only peer">
+                                <div class="border-2 rounded-lg p-4 text-center peer-checked:border-blue-600 peer-checked:bg-blue-50">
+                                    <div class="h-20 bg-white border-t-4 border-b-4 border-blue-600 mb-2"></div>
+                                    <span class="text-sm font-medium">Modern Blue</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="receipt-theme" value="corporate" class="sr-only peer">
+                                <div class="border-2 rounded-lg p-4 text-center peer-checked:border-blue-600 peer-checked:bg-blue-50">
+                                    <div class="h-20 bg-gray-50 border border-gray-400 mb-2"></div>
+                                    <span class="text-sm font-medium">Corporate</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="receipt-theme" value="minimalist" class="sr-only peer">
+                                <div class="border-2 rounded-lg p-4 text-center peer-checked:border-blue-600 peer-checked:bg-blue-50">
+                                    <div class="h-20 bg-white border border-gray-200 mb-2 font-mono text-xs p-1">Receipt...</div>
+                                    <span class="text-sm font-medium">Minimalist</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="receipt-theme" value="elegant" class="sr-only peer">
+                                <div class="border-2 rounded-lg p-4 text-center peer-checked:border-blue-600 peer-checked:bg-blue-50">
+                                    <div class="h-20 bg-orange-50 border border-orange-200 mb-2"></div>
+                                    <span class="text-sm font-medium">Elegant</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Payment Gateways -->
                     <div class="glass-panel rounded-xl p-6">
                         <h3 class="font-bold text-lg text-slate-800 mb-4">Easypaisa</h3>
                         <div class="space-y-4">
@@ -551,9 +601,9 @@
 
     <!-- HIDDEN PRINTABLE RECEIPT -->
     <div id="printable-area" class="hidden bg-white text-slate-900" style="font-family: serif;">
-        <div> <!-- Content Wrapper -->
+        <div id="receipt-content-wrapper"> <!-- Content Wrapper for Theming -->
             <!-- Header -->
-            <div class="flex justify-between items-start border-b-4 border-slate-900 pb-6 mb-8">
+            <div class="flex justify-between items-start border-b-4 border-slate-900 pb-6 mb-8 receipt-header">
                 <div class="flex items-center space-x-6">
                     <!-- Logo -->
                     <img src="download (2).png" alt="Grace Academy Logo" class="h-32 w-32 object-contain rounded-full shadow-sm border border-slate-200 p-1">
@@ -573,7 +623,7 @@
             </div>
 
             <!-- Student Info Grid -->
-            <div class="grid grid-cols-2 gap-x-12 gap-y-6 mb-10 text-lg border border-slate-300 p-6 rounded-lg bg-slate-50">
+            <div class="grid grid-cols-2 gap-x-12 gap-y-6 mb-10 text-lg border border-slate-300 p-6 rounded-lg bg-slate-50 receipt-info">
                 <div class="flex border-b border-slate-300 pb-2">
                     <span class="font-bold w-40 text-slate-700">Student Name:</span>
                     <span id="print-name" class="flex-1 font-semibold text-slate-900 uppercase"></span>
@@ -593,7 +643,7 @@
             </div>
 
             <!-- Payment Details Table -->
-            <table class="w-full border-collapse border border-slate-900 mb-12 shadow-sm">
+            <table class="w-full border-collapse border border-slate-900 mb-12 shadow-sm receipt-table">
                 <thead class="bg-slate-900 text-white">
                     <tr>
                         <th class="p-4 text-left text-lg font-bold w-3/4 border-r border-slate-700">Description / Particulars</th>
@@ -760,6 +810,7 @@
         let studentsData = [];
         let teachersData = [];
         let currentClassId = null;
+        let selectedReceiptTheme = 'classic';
 
         document.addEventListener('DOMContentLoaded', () => {
             const session = JSON.parse(localStorage.getItem('grace_user_session'));
@@ -779,7 +830,7 @@
             loadStaffList();
             loadTransactions();
             loadPaymentApprovals();
-            loadPaymentSettings();
+            loadSettings(); // Combined loader
             loadAnnouncements();
         }
 
@@ -837,6 +888,7 @@
                 slots.sort((a,b) => (daysOrder[a.day] || 7) - (daysOrder[b.day] || 7) || a.start.localeCompare(b.start));
 
                 slots.forEach(slot => {
+                    // Correctly find teacher name from teachersData
                     const tName = teachersData.find(t => t.id === slot.teacherId)?.name || 'Unknown';
                     ttBody.innerHTML += `
                         <tr class="border-b">
@@ -847,7 +899,7 @@
                         </tr>
                     `;
                 });
-            } catch(e){ console.error(e); }
+            } catch(e){ console.error("Timetable load error:", e); }
 
             // Load Tests
             const testsBody = document.getElementById('detail-tests-body');
@@ -866,7 +918,7 @@
                         </tr>
                     `;
                 });
-            } catch(e) { console.error(e); }
+            } catch(e) { console.error("Tests load error:", e); }
 
             // Populate Teacher Select in Modal
             const tSelect = document.getElementById('timetable-teacher-select');
@@ -882,9 +934,13 @@
                 day: e.target.day.value, start: e.target.start.value, end: e.target.end.value,
                 subject: e.target.subject.value, teacherId: e.target.teacherId.value
             };
-            await getCollection('classes').doc(currentClassId).collection('timetable').add(data);
-            closeModal('modal-add-timetable');
-            openClassDetail(currentClassId);
+            try {
+                await getCollection('classes').doc(currentClassId).collection('timetable').add(data);
+                closeModal('modal-add-timetable');
+                openClassDetail(currentClassId);
+            } catch(err) {
+                alert("Error adding slot: " + err.message);
+            }
         });
 
         async function deleteTimetableSlot(id) {
@@ -902,9 +958,13 @@
                 subject: e.target.subject.value, topic: e.target.topic.value,
                 date: e.target.date.value, time: e.target.time.value
             };
-            await getCollection('classes').doc(currentClassId).collection('tests').add(data);
-            closeModal('modal-add-test');
-            openClassDetail(currentClassId);
+            try {
+                await getCollection('classes').doc(currentClassId).collection('tests').add(data);
+                closeModal('modal-add-test');
+                openClassDetail(currentClassId);
+            } catch(err) {
+                alert("Error adding test: " + err.message);
+            }
         });
 
         async function deleteTest(id) {
@@ -1127,6 +1187,7 @@
                     })
                 });
 
+                // Populate Fields
                 document.getElementById('print-date').innerText = dateStr;
                 document.getElementById('print-ref').innerText = refId;
                 document.getElementById('print-name').innerText = student.name;
@@ -1136,6 +1197,11 @@
                 document.getElementById('print-desc').innerText = desc;
                 document.getElementById('print-amount').innerText = `PKR ${amount}`;
                 document.getElementById('print-total').innerText = `PKR ${amount}`;
+
+                // Apply Theme
+                const wrapper = document.getElementById('receipt-content-wrapper');
+                wrapper.className = ''; // Reset
+                wrapper.classList.add(`receipt-${selectedReceiptTheme}`);
 
                 // Hack to ensure only receipt prints (not timetable)
                 const style = document.createElement('style');
@@ -1219,26 +1285,37 @@
             }
         }
 
-        // --- SETTINGS ---
-        async function loadPaymentSettings() {
+        // --- SETTINGS (Combined) ---
+        async function loadSettings() {
             try {
-                const doc = await getCollection('settings').doc('payment_config').get();
+                const doc = await getCollection('settings').doc('config').get();
                 if(doc.exists) {
                     const d = doc.data();
-                    if(d.easypaisa) { document.getElementById('toggle-ep').checked = d.easypaisa.enabled; document.getElementById('ep-title').value = d.easypaisa.title; document.getElementById('ep-number').value = d.easypaisa.number; }
-                    if(d.jazzcash) { document.getElementById('toggle-jc').checked = d.jazzcash.enabled; document.getElementById('jc-title').value = d.jazzcash.title; document.getElementById('jc-number').value = d.jazzcash.number; }
-                    if(d.bank) { document.getElementById('toggle-bank').checked = d.bank.enabled; document.getElementById('bank-name').value = d.bank.bankName; document.getElementById('bank-title').value = d.bank.title; document.getElementById('bank-iban').value = d.bank.iban; }
+                    // Payment
+                    if(d.payment) {
+                        if(d.payment.easypaisa) { document.getElementById('toggle-ep').checked = d.payment.easypaisa.enabled; document.getElementById('ep-title').value = d.payment.easypaisa.title; document.getElementById('ep-number').value = d.payment.easypaisa.number; }
+                        if(d.payment.jazzcash) { document.getElementById('toggle-jc').checked = d.payment.jazzcash.enabled; document.getElementById('jc-title').value = d.payment.jazzcash.title; document.getElementById('jc-number').value = d.payment.jazzcash.number; }
+                        if(d.payment.bank) { document.getElementById('toggle-bank').checked = d.payment.bank.enabled; document.getElementById('bank-name').value = d.payment.bank.bankName; document.getElementById('bank-title').value = d.payment.bank.title; document.getElementById('bank-iban').value = d.payment.bank.iban; }
+                    }
+                    // Theme
+                    if(d.theme) {
+                        selectedReceiptTheme = d.theme;
+                        document.querySelector(`input[name="receipt-theme"][value="${d.theme}"]`).checked = true;
+                    }
                 }
             } catch(e) { console.error(e); }
         }
 
-        async function savePaymentSettings() {
-            const config = {
+        async function saveSettings() {
+            const paymentConfig = {
                 easypaisa: { enabled: document.getElementById('toggle-ep').checked, title: document.getElementById('ep-title').value, number: document.getElementById('ep-number').value },
                 jazzcash: { enabled: document.getElementById('toggle-jc').checked, title: document.getElementById('jc-title').value, number: document.getElementById('jc-number').value },
                 bank: { enabled: document.getElementById('toggle-bank').checked, bankName: document.getElementById('bank-name').value, title: document.getElementById('bank-title').value, iban: document.getElementById('bank-iban').value }
             };
-            await getCollection('settings').doc('payment_config').set(config);
+            const theme = document.querySelector('input[name="receipt-theme"]:checked').value;
+            selectedReceiptTheme = theme;
+
+            await getCollection('settings').doc('config').set({ payment: paymentConfig, theme: theme }, { merge: true });
             alert("Settings Saved!");
         }
 
