@@ -30,13 +30,15 @@
         .attendance-radio:checked + label.present { background-color: #dcfce7; border-color: #22c55e; color: #15803d; }
         .attendance-radio:checked + label.absent { background-color: #fee2e2; border-color: #ef4444; color: #b91c1c; }
         .attendance-radio:checked + label.leave { background-color: #fef9c3; border-color: #eab308; color: #854d0e; }
+        
+        .glass-panel { background: white; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden text-gray-800">
 
     <!-- Sidebar -->
     <aside class="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col z-20">
-        <div class="h-16 flex items-center px-6 border-b border-gray-200">
+        <div class="h-20 flex items-center px-6 border-b border-gray-200">
             <div class="flex items-center space-x-2 text-indigo-700">
                 <i class="fas fa-clipboard-check text-2xl"></i>
                 <span class="text-xl font-bold tracking-tight">Grace Attendance</span>
@@ -44,23 +46,27 @@
         </div>
         
         <nav class="flex-1 py-6 px-3 space-y-1">
-            <button onclick="showSection('dashboard')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors bg-indigo-50 text-indigo-700 font-medium">
+            <button onclick="showSection('dashboard')" class="nav-btn active w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors bg-indigo-50 text-indigo-700 font-medium" id="nav-dashboard">
                 <i class="fas fa-home w-5"></i>
                 <span>Overview</span>
             </button>
-            <button onclick="showSection('mark-attendance')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium">
+            <button onclick="showSection('mark-attendance')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium" id="nav-mark-attendance">
                 <i class="fas fa-user-check w-5"></i>
                 <span>Mark Attendance</span>
             </button>
-            <button onclick="showSection('reports')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium">
+            <button onclick="showSection('reports')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium" id="nav-reports">
                 <i class="fas fa-file-export w-5"></i>
                 <span>Reports & Export</span>
+            </button>
+            <button onclick="showSection('announcements')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium" id="nav-announcements">
+                <i class="fas fa-bullhorn w-5"></i>
+                <span>Announcements</span>
             </button>
         </nav>
 
         <div class="p-4 border-t border-gray-200">
             <div class="flex items-center space-x-3 mb-4">
-                <img id="user-avatar" src="" class="h-9 w-9 rounded-full bg-gray-200">
+                <div class="h-9 w-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold" id="user-initials">--</div>
                 <div>
                     <p id="user-name" class="text-sm font-semibold text-gray-700">Loading...</p>
                     <p class="text-xs text-gray-500">Staff Member</p>
@@ -112,7 +118,7 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <!-- Card 1 -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="glass-panel p-6 rounded-xl">
                         <div class="flex items-center justify-between mb-4">
                             <div class="bg-blue-50 text-blue-600 h-10 w-10 rounded-lg flex items-center justify-center text-lg">
                                 <i class="fas fa-users"></i>
@@ -124,7 +130,7 @@
                     </div>
 
                     <!-- Card 2 -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="glass-panel p-6 rounded-xl">
                         <div class="flex items-center justify-between mb-4">
                             <div class="bg-green-50 text-green-600 h-10 w-10 rounded-lg flex items-center justify-center text-lg">
                                 <i class="fas fa-check"></i>
@@ -136,20 +142,20 @@
                     </div>
 
                     <!-- Card 3 -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="glass-panel p-6 rounded-xl">
                         <div class="flex items-center justify-between mb-4">
                             <div class="bg-indigo-50 text-indigo-600 h-10 w-10 rounded-lg flex items-center justify-center text-lg">
                                 <i class="fas fa-school"></i>
                             </div>
                         </div>
                         <h3 id="stat-classes-count" class="text-3xl font-bold text-gray-800">--</h3>
-                        <p class="text-sm text-gray-500 mt-1">Active Classes</p>
+                        <p class="text-sm text-gray-500 mt-1">Total Classes</p>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                        <h3 class="font-bold text-gray-800">Recent Attendance Logs</h3>
+                <div class="glass-panel rounded-xl overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                        <h3 class="font-bold text-gray-800">Recent Activity Log</h3>
                         <button onclick="showSection('reports')" class="text-indigo-600 text-sm hover:underline font-medium">View All History</button>
                     </div>
                     <div id="recent-logs-list" class="divide-y divide-gray-100">
@@ -160,49 +166,41 @@
 
             <!-- SECTION: MARK ATTENDANCE -->
             <div id="mark-attendance" class="content-section hidden fade-in">
-                <div class="max-w-4xl mx-auto">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                <div class="max-w-5xl mx-auto">
+                    <div class="glass-panel rounded-xl p-6 mb-6">
                         <h2 class="text-xl font-bold text-gray-800 mb-4">Select Class to Mark</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Class</label>
-                                <select id="att-class-select" class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-gray-50">
-                                    <option value="10th">10th Grade</option>
-                                    <option value="9th">9th Grade</option>
+                        <div class="flex flex-col md:flex-row gap-4 items-end">
+                            <div class="w-full">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
+                                <select id="att-class-select" class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-white">
+                                    <option value="">Loading Classes...</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Section</label>
-                                <select id="att-section-select" class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-gray-50">
-                                    <option value="A">Section A</option>
-                                    <option value="B">Section B</option>
-                                </select>
-                            </div>
-                            <button onclick="loadStudentsForAttendance()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg transition shadow-sm">
+                            <button onclick="loadStudentsForAttendance()" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg transition shadow-sm whitespace-nowrap">
                                 Fetch Students
                             </button>
                         </div>
                     </div>
 
                     <div id="attendance-sheet" class="hidden">
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div class="glass-panel rounded-xl overflow-hidden">
+                            <div class="px-6 py-4 bg-indigo-50 border-b border-indigo-100 flex flex-col md:flex-row justify-between items-center gap-4">
                                 <div>
-                                    <h3 class="font-bold text-gray-800 text-lg">Attendance Sheet</h3>
-                                    <p class="text-sm text-gray-500" id="sheet-date-display">--</p>
+                                    <h3 class="font-bold text-indigo-900 text-lg" id="sheet-class-title">Attendance Sheet</h3>
+                                    <p class="text-sm text-indigo-600" id="sheet-date-display">--</p>
                                 </div>
                                 <div class="flex space-x-2">
-                                    <button type="button" onclick="markAll('Present')" class="px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">Mark All Present</button>
-                                    <button type="button" onclick="markAll('Absent')" class="px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">Mark All Absent</button>
+                                    <button type="button" onclick="markAll('Present')" class="px-3 py-1.5 bg-white border border-indigo-200 rounded-md text-sm font-medium text-indigo-700 hover:bg-indigo-50 shadow-sm transition">Mark All Present</button>
+                                    <button type="button" onclick="markAll('Absent')" class="px-3 py-1.5 bg-white border border-red-200 rounded-md text-sm font-medium text-red-700 hover:bg-red-50 shadow-sm transition">Mark All Absent</button>
                                 </div>
                             </div>
                             
-                            <div class="divide-y divide-gray-100" id="student-list-container">
+                            <div class="divide-y divide-gray-100 bg-white" id="student-list-container">
                                 <!-- Students Injected Here -->
                             </div>
 
-                            <div class="p-6 bg-gray-50 border-t border-gray-200">
-                                <button onclick="saveAttendance()" class="w-full md:w-auto md:float-right bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition transform hover:-translate-y-0.5">
+                            <div class="p-6 bg-gray-50 border-t border-gray-200 sticky bottom-0">
+                                <button onclick="saveAttendance()" class="w-full md:w-auto md:float-right bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition transform hover:-translate-y-0.5 flex items-center justify-center">
                                     <i class="fas fa-save mr-2"></i> Save Permanent Record
                                 </button>
                                 <div class="clear-both"></div>
@@ -214,45 +212,33 @@
 
             <!-- SECTION: REPORTS -->
             <div id="reports" class="content-section hidden fade-in">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                <div class="glass-panel rounded-xl p-6 mb-6">
                     <h2 class="text-xl font-bold text-gray-800 mb-4">Export Attendance Data</h2>
-                    <p class="text-gray-600 mb-6">Download detailed attendance sheets in Excel-compatible CSV format.</p>
+                    <p class="text-gray-600 mb-6">Download detailed daily attendance sheets in Excel-compatible CSV format.</p>
                     
                     <div class="flex flex-col md:flex-row gap-4 items-end">
                         <div class="flex-1 w-full">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
-                            <input type="date" id="export-date" class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-gray-50">
+                            <input type="date" id="export-date" class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-white">
                         </div>
                         <div class="flex-1 w-full">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Class</label>
-                            <select id="export-class" class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-gray-50">
-                                <option value="10th">10th</option>
-                                <option value="9th">9th</option>
-                            </select>
-                        </div>
-                         <div class="flex-1 w-full">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Section</label>
-                            <select id="export-section" class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-gray-50">
-                                <option value="A">Section A</option>
-                                <option value="B">Section B</option>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
+                            <select id="export-class-select" class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-white">
+                                <option value="">Loading...</option>
                             </select>
                         </div>
                         <button onclick="downloadCSV()" class="bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-6 rounded-lg transition shadow-sm w-full md:w-auto">
-                            <i class="fas fa-file-csv mr-2"></i> Download Excel
+                            <i class="fas fa-file-csv mr-2"></i> Download CSV
                         </button>
                     </div>
                 </div>
+            </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-100">
-                        <h3 class="font-bold text-gray-800">Historical Records Preview</h3>
-                    </div>
-                    <div class="p-8 text-center" id="history-placeholder">
-                        <div class="inline-block p-4 rounded-full bg-gray-100 text-gray-400 mb-3">
-                            <i class="fas fa-history text-2xl"></i>
-                        </div>
-                        <p class="text-gray-500">Select filters above to download attendance records.</p>
-                    </div>
+            <!-- SECTION: ANNOUNCEMENTS -->
+            <div id="announcements" class="content-section hidden fade-in">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Academy Announcements</h2>
+                <div id="announcements-container" class="space-y-4">
+                    <!-- Populated via JS -->
                 </div>
             </div>
 
@@ -273,9 +259,13 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        const appId = "sultania-academy-v1";
+        
+        function getCollection(name) { return db.collection('artifacts').doc(appId).collection('public').doc('data').collection(name); }
 
         // --- GLOBAL STATE ---
         let currentStudentsList = []; // Array of student objects currently loaded in the sheet
+        let classesData = []; // Array of {id, name, section}
 
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -295,8 +285,10 @@
             // Auth Check
             auth.onAuthStateChanged(async (user) => {
                 if (user) {
-                    initAttenderProfile(user);
+                    await initAttenderProfile(user);
+                    await fetchClasses();
                     loadDashboardStats();
+                    loadAnnouncements();
                 } else {
                     window.location.href = 'login.html';
                 }
@@ -304,32 +296,52 @@
         });
 
         // --- PROFILE ---
-        function initAttenderProfile(user) {
-            // Mock profile data since Attender might not have a detailed doc yet
-            const name = user.email ? user.email.split('@')[0] : "Staff Member";
-            document.getElementById('user-name').textContent = name.charAt(0).toUpperCase() + name.slice(1);
-            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${name}&background=6366f1&color=fff`;
+        async function initAttenderProfile(user) {
+            try {
+                const doc = await getCollection('staff').doc(user.uid).get();
+                const name = doc.exists ? doc.data().name : (user.email ? user.email.split('@')[0] : "Staff");
+                
+                document.getElementById('user-name').textContent = name.charAt(0).toUpperCase() + name.slice(1);
+                document.getElementById('user-initials').textContent = name.charAt(0).toUpperCase();
+            } catch(e) { console.error("Profile load error", e); }
             document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        // --- FETCH CLASSES ---
+        async function fetchClasses() {
+            try {
+                const snap = await getCollection('classes').get();
+                classesData = [];
+                const attSelect = document.getElementById('att-class-select');
+                const expSelect = document.getElementById('export-class-select');
+                
+                attSelect.innerHTML = '<option value="">Select Class...</option>';
+                expSelect.innerHTML = '<option value="">Select Class...</option>';
+
+                snap.forEach(doc => {
+                    const cls = { id: doc.id, ...doc.data() };
+                    classesData.push(cls);
+                    const opt = `<option value="${cls.id}">${cls.name} - ${cls.section}</option>`;
+                    attSelect.innerHTML += opt;
+                    expSelect.innerHTML += opt;
+                });
+            } catch(e) { console.error("Classes fetch error", e); }
         }
 
         // --- DASHBOARD LOGIC ---
         async function loadDashboardStats() {
             try {
-                // Total Students Count (Mock estimation for speed or query if small DB)
-                // For production with limited reads, better to have a metadata doc. 
-                // Here we'll do a simple count of the 'students' collection for the demo.
-                const stdSnap = await db.collection('students').get();
+                // Total Students Count
+                const stdSnap = await getCollection('students').get();
                 document.getElementById('stat-total-students').textContent = stdSnap.size;
+                document.getElementById('stat-classes-count').textContent = classesData.length;
 
                 // Today's Attendance Check
                 const todayStr = new Date().toISOString().split('T')[0];
-                const attSnap = await db.collection('attendance_history').where('date', '==', todayStr).get();
+                const attSnap = await getCollection('attendance_history').where('date', '==', todayStr).get();
                 
                 let presentCount = 0;
-                let classesMarked = 0;
-
                 attSnap.forEach(doc => {
-                    classesMarked++;
                     const data = doc.data();
                     if(data.records) {
                         presentCount += data.records.filter(r => r.status === 'Present').length;
@@ -337,8 +349,6 @@
                 });
 
                 document.getElementById('stat-present-today').textContent = presentCount;
-                // Classes marked today (or total classes count if static)
-                document.getElementById('stat-classes-count').textContent = classesMarked; // Showing marked count for today
 
                 // Load Recent Logs
                 const logContainer = document.getElementById('recent-logs-list');
@@ -351,14 +361,14 @@
                         const present = data.records.filter(r => r.status === 'Present').length;
                         const total = data.records.length;
                         logContainer.innerHTML += `
-                            <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+                            <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 border-b border-gray-50 last:border-0">
                                 <div class="flex items-center">
                                     <div class="bg-indigo-100 text-indigo-600 rounded-full h-8 w-8 flex items-center justify-center mr-3">
                                         <i class="fas fa-clipboard-list text-xs"></i>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-semibold text-gray-800">Class ${data.class} - ${data.section}</p>
-                                        <p class="text-xs text-gray-500">Marked by Attender</p>
+                                        <p class="text-sm font-semibold text-gray-800">${data.className}</p>
+                                        <p class="text-xs text-gray-500">Marked by Staff</p>
                                     </div>
                                 </div>
                                 <span class="text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded">${present}/${total} Present</span>
@@ -367,26 +377,39 @@
                     });
                 }
 
-            } catch (err) {
-                console.error("Stats Error", err);
-            }
+            } catch (err) { console.error("Stats Error", err); }
         }
 
         // --- ATTENDANCE LOGIC ---
         async function loadStudentsForAttendance() {
-            const cls = document.getElementById('att-class-select').value;
-            const sec = document.getElementById('att-section-select').value;
+            const classId = document.getElementById('att-class-select').value;
             const container = document.getElementById('student-list-container');
             const sheet = document.getElementById('attendance-sheet');
+
+            if(!classId) { alert("Please select a class."); return; }
+
+            const selectedClass = classesData.find(c => c.id === classId);
+            document.getElementById('sheet-class-title').textContent = `Attendance: ${selectedClass.name} - ${selectedClass.section}`;
 
             container.innerHTML = '<div class="p-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> Fetching Class List...</div>';
             sheet.classList.remove('hidden');
 
             try {
-                const snapshot = await db.collection('students')
-                    .where('class', '==', cls)
-                    .where('section', '==', sec)
-                    .orderBy('rollNo')
+                // Check if already marked today?
+                const todayStr = new Date().toISOString().split('T')[0];
+                const historyDocId = `${classId}_${todayStr}`;
+                const historyDoc = await getCollection('attendance_history').doc(historyDocId).get();
+                
+                let existingRecords = null;
+                if(historyDoc.exists) {
+                    existingRecords = historyDoc.data().records;
+                    // Could pre-fill logic here, but simpler to just load students freshly
+                }
+
+                // Get Students
+                const snapshot = await getCollection('students')
+                    .where('class', '==', selectedClass.name)
+                    .where('section', '==', selectedClass.section)
                     .get();
 
                 container.innerHTML = '';
@@ -401,13 +424,19 @@
                     const std = { id: doc.id, ...doc.data() };
                     currentStudentsList.push(std);
                     
-                    // Generate Row
                     const rowId = `row-${std.id}`;
+                    // Check if existing record exists for status pre-check
+                    let preStatus = 'Present';
+                    if(existingRecords) {
+                        const rec = existingRecords.find(r => r.studentId === std.id);
+                        if(rec) preStatus = rec.status;
+                    }
+
                     container.innerHTML += `
-                        <div class="p-4 flex flex-col sm:flex-row items-center justify-between hover:bg-gray-50 transition" id="${rowId}">
+                        <div class="p-4 flex flex-col sm:flex-row items-center justify-between hover:bg-gray-50 transition border-b border-gray-100 last:border-0" id="${rowId}">
                             <div class="flex items-center w-full sm:w-1/3 mb-4 sm:mb-0">
-                                <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold mr-3">
-                                    ${std.rollNo ? std.rollNo.slice(-2) : '##'}
+                                <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold mr-3 text-sm font-mono">
+                                    ${std.rollNo || '##'}
                                 </div>
                                 <div>
                                     <p class="text-sm font-bold text-gray-800">${std.name}</p>
@@ -416,28 +445,20 @@
                             </div>
                             
                             <div class="flex items-center justify-end space-x-2 w-full sm:w-2/3">
-                                <!-- Present Option -->
-                                <div class="relative">
-                                    <input type="radio" name="status-${std.id}" id="p-${std.id}" value="Present" class="attendance-radio sr-only" checked>
-                                    <label for="p-${std.id}" class="present cursor-pointer block px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all text-center min-w-[80px]">
-                                        Present
-                                    </label>
+                                <!-- Present -->
+                                <div class="relative flex-1">
+                                    <input type="radio" name="status-${std.id}" id="p-${std.id}" value="Present" class="attendance-radio sr-only" ${preStatus === 'Present' ? 'checked' : ''}>
+                                    <label for="p-${std.id}" class="present cursor-pointer block py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all text-center">Present</label>
                                 </div>
-
-                                <!-- Absent Option -->
-                                <div class="relative">
-                                    <input type="radio" name="status-${std.id}" id="a-${std.id}" value="Absent" class="attendance-radio sr-only">
-                                    <label for="a-${std.id}" class="absent cursor-pointer block px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all text-center min-w-[80px]">
-                                        Absent
-                                    </label>
+                                <!-- Absent -->
+                                <div class="relative flex-1">
+                                    <input type="radio" name="status-${std.id}" id="a-${std.id}" value="Absent" class="attendance-radio sr-only" ${preStatus === 'Absent' ? 'checked' : ''}>
+                                    <label for="a-${std.id}" class="absent cursor-pointer block py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all text-center">Absent</label>
                                 </div>
-
-                                <!-- Leave Option -->
-                                <div class="relative">
-                                    <input type="radio" name="status-${std.id}" id="l-${std.id}" value="Leave" class="attendance-radio sr-only">
-                                    <label for="l-${std.id}" class="leave cursor-pointer block px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all text-center min-w-[80px]">
-                                        Leave
-                                    </label>
+                                <!-- Leave -->
+                                <div class="relative flex-1">
+                                    <input type="radio" name="status-${std.id}" id="l-${std.id}" value="Leave" class="attendance-radio sr-only" ${preStatus === 'Leave' ? 'checked' : ''}>
+                                    <label for="l-${std.id}" class="leave cursor-pointer block py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all text-center">Leave</label>
                                 </div>
                             </div>
                         </div>
@@ -464,10 +485,10 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
             btn.disabled = true;
 
-            const cls = document.getElementById('att-class-select').value;
-            const sec = document.getElementById('att-section-select').value;
+            const classId = document.getElementById('att-class-select').value;
+            const selectedClass = classesData.find(c => c.id === classId);
             const dateStr = new Date().toISOString().split('T')[0];
-            const docId = `${cls}_${sec}_${dateStr}`; // Unique ID for daily class record
+            const docId = `${classId}_${dateStr}`; 
 
             const records = [];
             currentStudentsList.forEach(std => {
@@ -483,47 +504,36 @@
             try {
                 const batch = db.batch();
 
-                // 1. Save Permanent Log to 'attendance_history' collection
-                const historyRef = db.collection('attendance_history').doc(docId);
+                // 1. Save Permanent Log
+                const historyRef = getCollection('attendance_history').doc(docId);
                 batch.set(historyRef, {
-                    class: cls,
-                    section: sec,
+                    classId: classId,
+                    className: `${selectedClass.name} - ${selectedClass.section}`,
                     date: dateStr,
                     timestamp: new Date().toISOString(),
                     markedBy: auth.currentUser.uid,
                     records: records
                 });
 
-                // 2. Update Individual Student Stats (Mock Calculation)
-                // In a real system, we'd query total days. Here we just increment counters if status is Present.
+                // 2. Update Student Stats (Optional simplified logic)
+                // In a real app, aggregation usually happens via Cloud Functions.
+                // Here we just update a 'lastAttendance' field for UI feedback.
                 records.forEach(rec => {
-                    const stdRef = db.collection('students').doc(rec.studentId);
-                    
-                    // Firestore Increment
-                    if (rec.status === 'Present') {
-                        // Assuming we have fields 'daysPresent' and 'totalDays'
-                        // If they don't exist, this will create them with value 1
-                        // We also update 'attendance' % (Approximate for demo)
-                        // Note: Accurate % requires read-before-write or cloud function. 
-                        // For this UI-only demo, we'll just set attendance to a random high number or 
-                        // try to read previous. Let's just do a simple log update for now to be safe.
-                        batch.update(stdRef, {
-                           lastAttendance: dateStr,
-                           attendanceStatus: 'Present'
-                           // In a complex app, use Cloud Functions to recalculate %
-                        });
-                    }
+                    const stdRef = getCollection('students').doc(rec.studentId);
+                    batch.update(stdRef, {
+                       lastAttendance: { date: dateStr, status: rec.status }
+                    });
                 });
 
                 await batch.commit();
 
                 alert("Attendance Saved Successfully!");
                 showSection('dashboard');
-                loadDashboardStats(); // Refresh stats
+                loadDashboardStats(); 
 
             } catch (err) {
                 console.error("Save failed", err);
-                alert("Failed to save attendance. Please try again.");
+                alert("Failed to save. " + err.message);
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
@@ -533,15 +543,14 @@
         // --- EXPORT LOGIC ---
         async function downloadCSV() {
             const date = document.getElementById('export-date').value;
-            const cls = document.getElementById('export-class').value;
-            const sec = document.getElementById('export-section').value;
+            const classId = document.getElementById('export-class-select').value;
 
-            if(!date) { alert("Please select a date."); return; }
+            if(!date || !classId) { alert("Please select date and class."); return; }
 
-            const docId = `${cls}_${sec}_${date}`;
+            const docId = `${classId}_${date}`;
             
             try {
-                const doc = await db.collection('attendance_history').doc(docId).get();
+                const doc = await getCollection('attendance_history').doc(docId).get();
                 
                 if(!doc.exists) {
                     alert("No attendance record found for this date and class.");
@@ -551,19 +560,19 @@
                 const data = doc.data();
                 const records = data.records;
 
-                // Create CSV Content
+                // Create CSV
                 let csvContent = "data:text/csv;charset=utf-8,";
-                csvContent += "Roll No,Student Name,Date,Status,Class\n"; // Header
+                csvContent += "Roll No,Student Name,Date,Status,Class\n"; 
 
                 records.forEach(row => {
-                    csvContent += `${row.rollNo},${row.name},${date},${row.status},${cls}-${sec}\n`;
+                    csvContent += `${row.rollNo},${row.name},${date},${row.status},${data.className}\n`;
                 });
 
-                // Trigger Download
+                // Download
                 const encodedUri = encodeURI(csvContent);
                 const link = document.createElement("a");
                 link.setAttribute("href", encodedUri);
-                link.setAttribute("download", `Attendance_${cls}_${sec}_${date}.csv`);
+                link.setAttribute("download", `Attendance_${data.className}_${date}.csv`);
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -574,22 +583,51 @@
             }
         }
 
+        // --- ANNOUNCEMENTS ---
+        async function loadAnnouncements() {
+            const container = document.getElementById('announcements-container');
+            try {
+                const snap = await getCollection('announcements')
+                    .where('audience', 'in', ['all', 'teachers']) // Assuming 'teachers' audience covers staff or 'all'
+                    .get(); // Remove orderBy for safety
+                
+                let items = [];
+                snap.forEach(d => items.push(d.data()));
+                items.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                container.innerHTML = '';
+                if (items.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-400 py-8">No announcements.</div>';
+                    return;
+                }
+
+                items.forEach(a => {
+                    container.innerHTML += `
+                        <div class="glass-panel p-5 rounded-xl border-l-4 border-indigo-400">
+                            <h4 class="font-bold text-gray-800 text-lg mb-1">${a.title}</h4>
+                            <p class="text-gray-600 text-sm leading-relaxed">${a.message}</p>
+                            <p class="text-xs text-gray-400 mt-3 text-right">${new Date(a.createdAt).toLocaleString()}</p>
+                        </div>
+                    `;
+                });
+            } catch (error) { console.error("Announcements Error", error); }
+        }
+
         // --- NAVIGATION ---
         window.showSection = function(id) {
             document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
             
-            // Sidebar Active State
             const btns = document.querySelectorAll('.nav-btn');
             btns.forEach(b => {
-                b.classList.remove('bg-indigo-50', 'text-indigo-700');
+                b.classList.remove('bg-indigo-50', 'text-indigo-700', 'active');
                 b.classList.add('text-gray-600', 'hover:bg-gray-50');
             });
             
-            const index = ['dashboard', 'mark-attendance', 'reports'].indexOf(id);
-            if(index !== -1) {
-                btns[index].classList.remove('text-gray-600', 'hover:bg-gray-50');
-                btns[index].classList.add('bg-indigo-50', 'text-indigo-700');
+            const btn = document.getElementById('nav-' + id);
+            if(btn) {
+                btn.classList.remove('text-gray-600', 'hover:bg-gray-50');
+                btn.classList.add('bg-indigo-50', 'text-indigo-700', 'active');
             }
         }
 
