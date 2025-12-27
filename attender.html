@@ -51,7 +51,7 @@
                 <span>Overview</span>
             </button>
             <button onclick="showSection('mark-attendance')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium" id="nav-mark-attendance">
-                <i class="fas fa-user-check w-5"></i>
+                <i class="fas fa-calendar-check w-5"></i>
                 <span>Mark Attendance</span>
             </button>
             <button onclick="showSection('reports')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium" id="nav-reports">
@@ -168,15 +168,24 @@
             <div id="mark-attendance" class="content-section hidden fade-in">
                 <div class="max-w-5xl mx-auto">
                     <div class="glass-panel rounded-xl p-6 mb-6">
-                        <h2 class="text-xl font-bold text-gray-800 mb-4">Select Class to Mark</h2>
-                        <div class="flex flex-col md:flex-row gap-4 items-end">
-                            <div class="w-full">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Mark Attendance</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        <i class="fas fa-calendar text-gray-400"></i>
+                                    </div>
+                                    <input type="date" id="attendance-date" class="block w-full pl-10 border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-white cursor-pointer">
+                                </div>
+                            </div>
+                            <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
                                 <select id="att-class-select" class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2.5 border bg-white">
                                     <option value="">Loading Classes...</option>
                                 </select>
                             </div>
-                            <button onclick="loadStudentsForAttendance()" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg transition shadow-sm whitespace-nowrap">
+                            <button onclick="loadStudentsForAttendance()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg transition shadow-sm whitespace-nowrap">
                                 Fetch Students
                             </button>
                         </div>
@@ -187,7 +196,7 @@
                             <div class="px-6 py-4 bg-indigo-50 border-b border-indigo-100 flex flex-col md:flex-row justify-between items-center gap-4">
                                 <div>
                                     <h3 class="font-bold text-indigo-900 text-lg" id="sheet-class-title">Attendance Sheet</h3>
-                                    <p class="text-sm text-indigo-600" id="sheet-date-display">--</p>
+                                    <p class="text-sm text-indigo-600">Date: <span id="sheet-date-display" class="font-bold">--</span></p>
                                 </div>
                                 <div class="flex space-x-2">
                                     <button type="button" onclick="markAll('Present')" class="px-3 py-1.5 bg-white border border-indigo-200 rounded-md text-sm font-medium text-indigo-700 hover:bg-indigo-50 shadow-sm transition">Mark All Present</button>
@@ -278,9 +287,12 @@
 
             // Set Header Date
             const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
             document.getElementById('header-date').textContent = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            document.getElementById('sheet-date-display').textContent = today.toLocaleDateString();
-            document.getElementById('export-date').valueAsDate = today;
+            
+            // Set Default Dates
+            document.getElementById('attendance-date').value = dateStr;
+            document.getElementById('export-date').value = dateStr;
 
             // Auth Check
             auth.onAuthStateChanged(async (user) => {
@@ -368,7 +380,7 @@
                                     </div>
                                     <div>
                                         <p class="text-sm font-semibold text-gray-800">${data.className}</p>
-                                        <p class="text-xs text-gray-500">Marked by Staff</p>
+                                        <p class="text-xs text-gray-500">Date: ${new Date(data.date).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                                 <span class="text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded">${present}/${total} Present</span>
@@ -383,27 +395,28 @@
         // --- ATTENDANCE LOGIC ---
         async function loadStudentsForAttendance() {
             const classId = document.getElementById('att-class-select').value;
+            const dateVal = document.getElementById('attendance-date').value;
             const container = document.getElementById('student-list-container');
             const sheet = document.getElementById('attendance-sheet');
 
             if(!classId) { alert("Please select a class."); return; }
+            if(!dateVal) { alert("Please select a date."); return; }
 
             const selectedClass = classesData.find(c => c.id === classId);
-            document.getElementById('sheet-class-title').textContent = `Attendance: ${selectedClass.name} - ${selectedClass.section}`;
+            document.getElementById('sheet-class-title').textContent = `${selectedClass.name} - ${selectedClass.section}`;
+            document.getElementById('sheet-date-display').textContent = new Date(dateVal).toLocaleDateString(undefined, {weekday:'long', year:'numeric', month:'long', day:'numeric'});
 
             container.innerHTML = '<div class="p-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> Fetching Class List...</div>';
             sheet.classList.remove('hidden');
 
             try {
-                // Check if already marked today?
-                const todayStr = new Date().toISOString().split('T')[0];
-                const historyDocId = `${classId}_${todayStr}`;
+                // Check if already marked for selected date
+                const historyDocId = `${classId}_${dateVal}`;
                 const historyDoc = await getCollection('attendance_history').doc(historyDocId).get();
                 
                 let existingRecords = null;
                 if(historyDoc.exists) {
                     existingRecords = historyDoc.data().records;
-                    // Could pre-fill logic here, but simpler to just load students freshly
                 }
 
                 // Get Students
@@ -486,9 +499,12 @@
             btn.disabled = true;
 
             const classId = document.getElementById('att-class-select').value;
+            const dateVal = document.getElementById('attendance-date').value;
+            
+            if(!dateVal) { alert("Please select date."); btn.innerHTML = originalText; btn.disabled = false; return; }
+
             const selectedClass = classesData.find(c => c.id === classId);
-            const dateStr = new Date().toISOString().split('T')[0];
-            const docId = `${classId}_${dateStr}`; 
+            const docId = `${classId}_${dateVal}`; 
 
             const records = [];
             currentStudentsList.forEach(std => {
@@ -504,30 +520,28 @@
             try {
                 const batch = db.batch();
 
-                // 1. Save Permanent Log
+                // 1. Save Permanent Log (Overwrite if exists to allow edits)
                 const historyRef = getCollection('attendance_history').doc(docId);
                 batch.set(historyRef, {
                     classId: classId,
                     className: `${selectedClass.name} - ${selectedClass.section}`,
-                    date: dateStr,
+                    date: dateVal,
                     timestamp: new Date().toISOString(),
                     markedBy: auth.currentUser.uid,
                     records: records
                 });
 
-                // 2. Update Student Stats (Optional simplified logic)
-                // In a real app, aggregation usually happens via Cloud Functions.
-                // Here we just update a 'lastAttendance' field for UI feedback.
+                // 2. Update Student Last Attendance Status (Snapshot only)
                 records.forEach(rec => {
                     const stdRef = getCollection('students').doc(rec.studentId);
                     batch.update(stdRef, {
-                       lastAttendance: { date: dateStr, status: rec.status }
+                       lastAttendance: { date: dateVal, status: rec.status }
                     });
                 });
 
                 await batch.commit();
 
-                alert("Attendance Saved Successfully!");
+                alert(`Attendance for ${dateVal} Saved Successfully!`);
                 showSection('dashboard');
                 loadDashboardStats(); 
 
@@ -588,8 +602,8 @@
             const container = document.getElementById('announcements-container');
             try {
                 const snap = await getCollection('announcements')
-                    .where('audience', 'in', ['all', 'teachers']) // Assuming 'teachers' audience covers staff or 'all'
-                    .get(); // Remove orderBy for safety
+                    .where('audience', 'in', ['all', 'teachers']) 
+                    .get(); 
                 
                 let items = [];
                 snap.forEach(d => items.push(d.data()));
