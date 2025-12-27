@@ -670,12 +670,20 @@
                 snap.forEach(doc => {
                     const s = { id: doc.id, ...doc.data() };
                     currentGradingStudents.push(s);
+                    
+                    // Check if marks already exist for this test
+                    let existingMark = '';
+                    if(s.results && Array.isArray(s.results)) {
+                        const prevResult = s.results.find(r => r.testId === testId);
+                        if(prevResult) existingMark = prevResult.marks;
+                    }
+
                     tbody.innerHTML += `
                         <tr class="border-b">
                             <td class="px-6 py-3 font-mono">${s.rollNo}</td>
                             <td class="px-6 py-3 font-medium">${s.name}</td>
                             <td class="px-6 py-3">
-                                <input type="number" id="mark-${s.id}" class="w-full border rounded p-1 text-center bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="0">
+                                <input type="number" id="mark-${s.id}" value="${existingMark}" min="0" max="${totalMarks}" class="w-full border rounded p-1 text-center bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="0">
                             </td>
                             <td class="px-6 py-3 text-slate-400">/ ${totalMarks}</td>
                         </tr>
@@ -690,35 +698,67 @@
             const testId = document.getElementById('grade-test-select').value;
             const testSelect = document.getElementById('grade-test-select');
             const testName = testSelect.options[testSelect.selectedIndex].text;
-            const totalMarks = testSelect.options[testSelect.selectedIndex].getAttribute('data-total');
+            const totalMarks = parseInt(testSelect.options[testSelect.selectedIndex].getAttribute('data-total')) || 100;
             const batch = db.batch();
             let count = 0;
 
-            currentGradingStudents.forEach(s => {
-                const val = document.getElementById(`mark-${s.id}`).value;
-                if(val !== "") {
-                    const ref = getCollection('students').doc(s.id);
-                    const resultData = {
-                        testId: testId,
-                        testName: testName,
-                        marks: parseInt(val),
-                        total: parseInt(totalMarks), 
-                        date: new Date().toISOString()
-                    };
-                    batch.update(ref, {
-                        results: firebase.firestore.FieldValue.arrayUnion(resultData)
-                    });
-                    count++;
-                }
-            });
-
-            if(count === 0) { alert("No marks entered."); return; }
-
             try {
-                await batch.commit();
+                // We need to fetch student docs first to ensure we handle 'results' array correctly
+                // Although arrayUnion appends, we want to replace/update if exists. 
+                // Firestore arrayUnion doesn't support 'update if exists'.
+                // Best practice: Read student doc, modify array in memory, write back.
+                // However, since we are doing batch, we can't read-modify-write inside batch easily without transaction.
+                // Alternative: Just use arrayUnion. If teacher edits, it adds duplicate. 
+                // Better Alternative: Store results in subcollection `students/{id}/results/{testId}`.
+                // Given the current structure is `results` array in student doc:
+                // We will attempt to use a Transaction for atomicity or just simple individual updates for reliability.
+                
+                // Let's use individual updates for reliability here to ensure we filter out old marks.
+                
+                const updatePromises = currentGradingStudents.map(async (s) => {
+                    const valInput = document.getElementById(`mark-${s.id}`);
+                    const val = valInput.value;
+                    
+                    if (val !== "") {
+                        const marks = parseInt(val);
+                        if(marks < 0 || marks > totalMarks) {
+                            alert(`Invalid marks for ${s.name}. Must be between 0 and ${totalMarks}`);
+                            throw new Error("Invalid Input");
+                        }
+
+                        const studentRef = getCollection('students').doc(s.id);
+                        
+                        // We need to read the latest doc to remove old result if exists
+                        return db.runTransaction(async (transaction) => {
+                            const doc = await transaction.get(studentRef);
+                            if (!doc.exists) return;
+
+                            let results = doc.data().results || [];
+                            // Remove old result for this test
+                            results = results.filter(r => r.testId !== testId);
+                            
+                            // Add new result
+                            results.push({
+                                testId: testId,
+                                testName: testName,
+                                marks: marks,
+                                total: totalMarks,
+                                date: new Date().toISOString()
+                            });
+
+                            transaction.update(studentRef, { results: results });
+                        });
+                    }
+                });
+
+                await Promise.all(updatePromises);
                 alert("Results Saved Successfully!");
                 document.getElementById('grading-sheet-container').classList.add('hidden');
-            } catch(e) { alert("Error saving: " + e.message); }
+
+            } catch(e) { 
+                console.error(e);
+                if(e.message !== "Invalid Input") alert("Error saving marks: " + e.message); 
+            }
         }
 
         // --- ANNOUNCEMENTS ---
